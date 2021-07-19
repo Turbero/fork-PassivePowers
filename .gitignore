@@ -1,0 +1,6 @@
+bin
+obj
+/packages
+PassivePowers.sln.DotSettings.user
+.idea
+.vs
