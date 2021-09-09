@@ -71,6 +71,6 @@ namespace PassivePowers
 		public ConfigEntry<T> active = null!;
 		public ConfigEntry<T> passive = null!;
 
-		public T Value => (Player.m_localPlayer.m_seman.HaveStatusEffect("PassivePowers Depletion " + powerName) ? default : Player.m_localPlayer.m_seman.HaveStatusEffect("PassivePowers " + powerName) ? active.Value : passive.Value)!;
+		public T Value => (Player.m_localPlayer?.m_seman.HaveStatusEffect("PassivePowers Depletion " + powerName) != false ? default : Player.m_localPlayer.m_seman.HaveStatusEffect("PassivePowers " + powerName) ? active.Value : passive.Value)!;
 	}
 }
