@@ -17,7 +17,7 @@ namespace PassivePowers
 	public class PassivePowers : BaseUnityPlugin
 	{
 		private const string ModName = "Passive Powers";
-		private const string ModVersion = "1.0";
+		private const string ModVersion = "1.0.1";
 		private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
 		private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName };
@@ -25,7 +25,7 @@ namespace PassivePowers
 		private static readonly Assembly? bepinexConfigManager = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "ConfigurationManager");
 		private static readonly Type? configManagerType = bepinexConfigManager?.GetType("ConfigurationManager.ConfigurationManager");
 		private static readonly object? configManager = configManagerType == null ? null : BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent(configManagerType);
-		private static void reloadConfigDisplay() => configManagerType?.GetMethod("BuildSettingList")!.Invoke(configManager, new object[0]);
+		private static void reloadConfigDisplay() => configManagerType?.GetMethod("BuildSettingList")!.Invoke(configManager, Array.Empty<object>());
 
 		private const int bossPowerCount = 5;
 
@@ -241,7 +241,7 @@ namespace PassivePowers
 		[HarmonyPatch(typeof(ItemStand), nameof(ItemStand.IsGuardianPowerActive))]
 		private class Patch_ItemStand_IsGuardianPowerActive
 		{
-			private static void Postfix(ref bool __result)
+			private static void Postfix(out bool __result)
 			{
 				__result = false;
 			}
@@ -503,9 +503,14 @@ namespace PassivePowers
 				}
 
 				RectTransform gpRoot = __instance.m_gpRoot;
-				GameObject powerContainer = new("powerContainer 1");
-				powerContainer.transform.parent = gpRoot;
-				powerContainer.transform.localPosition = Vector3.zero;
+				GameObject powerContainer = new("powerContainer 1")
+				{
+					transform =
+					{
+						parent = gpRoot,
+						localPosition = Vector3.zero
+					}
+				};
 				for (int i = gpRoot.childCount - 1; i >= 0; --i)
 				{
 					Transform child = gpRoot.GetChild(i);
