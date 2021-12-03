@@ -17,7 +17,7 @@ namespace PassivePowers
 	public class PassivePowers : BaseUnityPlugin
 	{
 		private const string ModName = "Passive Powers";
-		private const string ModVersion = "1.0.1";
+		private const string ModVersion = "1.0.2";
 		private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
 		private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName };

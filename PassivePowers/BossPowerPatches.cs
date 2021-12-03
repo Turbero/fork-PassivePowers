@@ -119,7 +119,7 @@ namespace PassivePowers
 
 		private static float ModerShipFactor(Ship ship)
 		{
-			List<Player> playersWithPower = ship.m_players.FindAll(p => Utils.getPassivePowers(p.m_nview.GetZDO().GetString("PassivePowers GuardianPowers")).Contains(Power.Moder));
+			List<Player> playersWithPower = ship.m_players.FindAll(p => Utils.getPassivePowers(p.m_nview.GetZDO()?.GetString("PassivePowers GuardianPowers") ?? "").Contains(Power.Moder));
 			return (float)playersWithPower.Count / Mathf.Max(1, ship.m_players.Count);
 		}
 
