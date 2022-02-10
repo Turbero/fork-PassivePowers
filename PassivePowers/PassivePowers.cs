@@ -538,7 +538,7 @@ namespace PassivePowers
 				int index = 0;
 				foreach (string s in Utils.getPassivePowers(Player.m_localPlayer))
 				{
-					if (ObjectDB.instance.GetStatusEffect(s) is StatusEffect se)
+					if (ObjectDB.instance.GetStatusEffect(s) is { } se)
 					{
 						hudPowers[index].root.gameObject.SetActive(true);
 						hudPowers[index].name.text = Localization.instance.Localize(se.m_name);
