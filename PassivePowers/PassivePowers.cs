@@ -17,7 +17,7 @@ namespace PassivePowers
 	public class PassivePowers : BaseUnityPlugin
 	{
 		private const string ModName = "Passive Powers";
-		private const string ModVersion = "1.0.2";
+		private const string ModVersion = "1.0.3";
 		private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
 		private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName };
@@ -148,7 +148,7 @@ namespace PassivePowers
 						{
 							string power = powers[i];
 
-							if (ObjectDB.instance.GetStatusEffect("PassivePowers " + power) is StatusEffect power_se)
+							if (ObjectDB.instance.GetStatusEffect("PassivePowers " + power) is { } power_se)
 							{
 								Player.m_localPlayer.m_guardianSE = power_se;
 								Player.m_localPlayer.StartGuardianPower();
@@ -353,7 +353,7 @@ namespace PassivePowers
 		{
 			private static void Prefix(ItemStand __instance)
 			{
-				if (__instance.m_guardianPower is StatusEffect statusEffect)
+				if (__instance.m_guardianPower is { } statusEffect)
 				{
 					UpdateStatusEffectTooltip(statusEffect);
 				}
@@ -428,7 +428,7 @@ namespace PassivePowers
 				stringBuilder.Append("<color=yellow>" + Localization.instance.Localize("$inventory_selectedgp") + "</color>\n");
 				foreach (string power in powers)
 				{
-					if (ObjectDB.instance.GetStatusEffect(power) is StatusEffect se)
+					if (ObjectDB.instance.GetStatusEffect(power) is { } se)
 					{
 						UpdateStatusEffectTooltip(se);
 
