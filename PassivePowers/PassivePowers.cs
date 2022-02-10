@@ -20,7 +20,7 @@ namespace PassivePowers
 		private const string ModVersion = "1.0.3";
 		private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
-		private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName };
+		private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = "1.0.3" };
 
 		private static readonly Assembly? bepinexConfigManager = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "ConfigurationManager");
 		private static readonly Type? configManagerType = bepinexConfigManager?.GetType("ConfigurationManager.ConfigurationManager");
