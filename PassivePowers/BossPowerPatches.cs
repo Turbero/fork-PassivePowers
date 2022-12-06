@@ -33,7 +33,7 @@ public static class BossPowerPatches
 			}
 		}
 	}
-		
+
 	[HarmonyPatch(typeof(Player), nameof(Player.GetJogSpeedFactor))]
 	private class Patch_Player_GetJogSpeedFactor
 	{
@@ -45,7 +45,7 @@ public static class BossPowerPatches
 			}
 		}
 	}
-		
+
 	[HarmonyPatch(typeof(Player), nameof(Player.GetRunSpeedFactor))]
 	private class Patch_Player_GetRunSpeedFactor
 	{
@@ -103,7 +103,7 @@ public static class BossPowerPatches
 			}
 		}
 	}
-		
+
 	[HarmonyPatch(typeof(SEMan), nameof(SEMan.ModifyHealthRegen))]
 	public static class Patch_SEMan_ModifyHealthRegen
 	{
@@ -167,6 +167,15 @@ public static class BossPowerPatches
 					yield return new CodeInstruction(OpCodes.Call, WindIntensityUpdater);
 				}
 			}
+		}
+	}
+
+	[HarmonyPatch(typeof(SEMan), nameof(SEMan.ModifyEitrRegen))]
+	private static class IncreaseEitrRegen
+	{
+		private static void Prefix(ref float eitrMultiplier)
+		{
+			eitrMultiplier *= 1 + PassivePowers.eitrRegenIncrease.Value / 100f;
 		}
 	}
 }

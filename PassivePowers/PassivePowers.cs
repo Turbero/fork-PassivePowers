@@ -17,17 +17,15 @@ namespace PassivePowers;
 public class PassivePowers : BaseUnityPlugin
 {
 	private const string ModName = "Passive Powers";
-	private const string ModVersion = "1.0.5";
+	private const string ModVersion = "1.0.6";
 	private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
-	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = "1.0.3" };
+	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = "1.0.6" };
 
-	private static readonly Assembly? bepinexConfigManager = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "ConfigurationManager");
-	private static readonly Type? configManagerType = bepinexConfigManager?.GetType("ConfigurationManager.ConfigurationManager");
-	private static readonly object? configManager = configManagerType == null ? null : BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent(configManagerType);
-	private static void reloadConfigDisplay() => configManagerType?.GetMethod("BuildSettingList")!.Invoke(configManager, Array.Empty<object>());
+	private static object? configManager;
+	private static void reloadConfigDisplay() => configManager?.GetType().GetMethod("BuildSettingList")!.Invoke(configManager, Array.Empty<object>());
 
-	private const int bossPowerCount = 5;
+	private const int bossPowerCount = 6;
 
 	private static ConfigEntry<Toggle> serverConfigLocked = null!;
 	public static ConfigEntry<int> maximumBossPowers = null!;
@@ -47,6 +45,7 @@ public class PassivePowers : BaseUnityPlugin
 	public static PowerConfig<int> windSpeedModifier = null!;
 	public static PowerConfig<int> elementalDamageReduction = null!;
 	public static PowerConfig<int> bonusFireDamage = null!;
+	public static PowerConfig<int> eitrRegenIncrease = null!;
 
 	private static float remainingCooldown => Player.m_localPlayer.m_guardianPowerCooldown;
 
@@ -76,8 +75,12 @@ public class PassivePowers : BaseUnityPlugin
 
 	public void Awake()
 	{
-		serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.Off, "If on, the configuration is locked and can be changed by server admins only.");
-		maximumBossPowers = config("1 - General", "Maximum boss powers", 2, new ConfigDescription("Sets the maximum number of boss powers that can be active at the same time.", new AcceptableValueRange<int>(1, 5)));
+		Assembly? bepinexConfigManager = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "ConfigurationManager");
+		Type? configManagerType = bepinexConfigManager?.GetType("ConfigurationManager.ConfigurationManager");
+		configManager = configManagerType == null ? null : BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent(configManagerType);
+
+		serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On, "If on, the configuration is locked and can be changed by server admins only.");
+		maximumBossPowers = config("1 - General", "Maximum boss powers", 2, new ConfigDescription("Sets the maximum number of boss powers that can be active at the same time.", new AcceptableValueRange<int>(1, bossPowerCount)));
 		activeBossPowers = config("2 - Active Powers", "Boss powers can be activated", Toggle.Off, "Boss powers can still be activated.");
 		activeBossPowerCooldown = config("2 - Active Powers", "Cooldown for boss powers (seconds)", 600, new ConfigDescription("Cooldown after activating one of the boss powers. Cooldown is shared between all boss powers.", null, activeBossPowerSettingAttributes));
 		activeBossPowerCooldown.SettingChanged += activeBossPowerSettingChanged;
@@ -96,6 +99,7 @@ public class PassivePowers : BaseUnityPlugin
 		windSpeedModifier = powerConfig(Power.Moder, "5 - Moder", "Modifies the wind speed (percentage)", 35, 200, new ConfigDescription("Increases the speed of tailwind, decreases the speed of headwind.", new AcceptableValueRange<int>(0, 500)));
 		elementalDamageReduction = powerConfig(Power.Yagluth, "6 - Yagluth", "Elemental damage reduction (percentage)", 10, 85, new ConfigDescription("Reduces the elemental damage taken.", new AcceptableValueRange<int>(0, 100)));
 		bonusFireDamage = powerConfig(Power.Yagluth, "6 - Yagluth", "Bonus fire damage (percentage)", 10, 100, new ConfigDescription("Adds a percentage of your weapon damage as bonus fire damage to your attacks.", new AcceptableValueRange<int>(0, 500)));
+		eitrRegenIncrease = powerConfig(Power.Queen, "7 - Queen", "Eitr regeneration increase (percentage)", 25, 300, new ConfigDescription("Increases the Eitr regeneration.", new AcceptableValueRange<int>(0, 500)));
 
 		for (int i = 0; i < bossPowerCount; ++i)
 		{
@@ -318,6 +322,15 @@ public class PassivePowers : BaseUnityPlugin
 					if (value(bonusFireDamage) > 0)
 					{
 						powers.Add($"{type}: Deals {value(bonusFireDamage)}% increased damage as fire");
+					}
+					break;
+				}
+				
+				case Power.Queen:
+				{
+					if (value(eitrRegenIncrease) > 0)
+					{
+						powers.Add($"{type}: Increases Eitr regeneration by {value(eitrRegenIncrease)}%");
 					}
 					break;
 				}

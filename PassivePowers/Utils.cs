@@ -32,6 +32,7 @@ public static class Power
 	public const string Bonemass = "GP_Bonemass";
 	public const string Moder = "GP_Moder";
 	public const string Yagluth = "GP_Yagluth";
+	public const string Queen = "GP_Queen";
 }
 
 [HarmonyPatch(typeof(Player), nameof(Player.SetGuardianPower))]
