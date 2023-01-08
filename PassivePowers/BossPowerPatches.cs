@@ -15,7 +15,7 @@ public static class BossPowerPatches
 	{
 		private static void Prefix(SEMan __instance, ref float drain)
 		{
-			if (__instance.m_character is Player player && Utils.getPassivePowers(player).Contains(Power.Eikthyr))
+			if (__instance.m_character is Player player && Utils.CanApplyPower(player, Power.Eikthyr))
 			{
 				drain *= 1 - PassivePowers.runStaminaReduction.Value / 100f;
 			}
@@ -27,7 +27,7 @@ public static class BossPowerPatches
 	{
 		private static void Prefix(SEMan __instance, ref float staminaUse)
 		{
-			if (__instance.m_character is Player player && Utils.getPassivePowers(player).Contains(Power.Eikthyr))
+			if (__instance.m_character is Player player && Utils.CanApplyPower(player, Power.Eikthyr))
 			{
 				staminaUse *= 1 - PassivePowers.jumpStaminaReduction.Value / 100f;
 			}
@@ -39,7 +39,7 @@ public static class BossPowerPatches
 	{
 		private static void Postfix(Player __instance, ref float __result)
 		{
-			if (Utils.getPassivePowers(__instance).Contains(Power.Eikthyr))
+			if (Utils.CanApplyPower(__instance, Power.Eikthyr))
 			{
 				__result += PassivePowers.movementSpeedIncrease.Value / 100f;
 			}
@@ -51,7 +51,7 @@ public static class BossPowerPatches
 	{
 		private static void Postfix(Player __instance, ref float __result)
 		{
-			if (Utils.getPassivePowers(__instance).Contains(Power.Eikthyr))
+			if (Utils.CanApplyPower(__instance, Power.Eikthyr))
 			{
 				__result += PassivePowers.movementSpeedIncrease.Value / 100f;
 			}
@@ -65,7 +65,7 @@ public static class BossPowerPatches
 		{
 			if (__instance.m_character is Player player)
 			{
-				if (Utils.getPassivePowers(player).Contains(Power.TheElder))
+				if (Utils.CanApplyPower(player, Power.TheElder))
 				{
 					hitData.m_damage.m_chop *= 1 + PassivePowers.treeDamageIncrease.Value / 100f;
 					hitData.m_damage.m_pickaxe *= 1 + PassivePowers.miningDamageIncrease.Value / 100f;
@@ -74,21 +74,21 @@ public static class BossPowerPatches
 		}
 	}
 
-	[HarmonyPatch(typeof(Character), nameof(Character.Damage))]
-	private class Patch_Character_Damage
+	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
+	private class Patch_Character_RPC_Damage
 	{
 		private static void Prefix(Character __instance, HitData hit)
 		{
 			if (__instance is Player player)
 			{
-				if (Utils.getPassivePowers(player).Contains(Power.Bonemass))
+				if (Utils.CanApplyPower(player, Power.Bonemass))
 				{
 					hit.m_damage.m_blunt *= 1 - PassivePowers.phyiscalDamageReduction.Value / 100f;
 					hit.m_damage.m_pierce *= 1 - PassivePowers.phyiscalDamageReduction.Value / 100f;
 					hit.m_damage.m_slash *= 1 - PassivePowers.phyiscalDamageReduction.Value / 100f;
 				}
 
-				if (Utils.getPassivePowers(player).Contains(Power.Yagluth))
+				if (Utils.CanApplyPower(player, Power.Yagluth))
 				{
 					hit.m_damage.m_fire *= 1 - PassivePowers.elementalDamageReduction.Value / 100f;
 					hit.m_damage.m_frost *= 1 - PassivePowers.elementalDamageReduction.Value / 100f;
@@ -96,8 +96,15 @@ public static class BossPowerPatches
 					hit.m_damage.m_lightning *= 1 - PassivePowers.elementalDamageReduction.Value / 100f;
 				}
 			}
+		}
+	}
 
-			if (hit.GetAttacker() is Player attacker && Utils.getPassivePowers(attacker).Contains(Power.Yagluth))
+	[HarmonyPatch(typeof(Character), nameof(Character.Damage))]
+	private class Patch_Character_Damage
+	{
+		private static void Prefix(HitData hit)
+		{
+			if (hit.GetAttacker() is Player attacker && Utils.CanApplyPower(attacker, Power.Yagluth))
 			{
 				hit.m_damage.m_fire += hit.GetTotalDamage() * PassivePowers.bonusFireDamage.Value / 100f;
 			}
@@ -110,7 +117,7 @@ public static class BossPowerPatches
 		[UsedImplicitly]
 		public static void Postfix(SEMan __instance, ref float regenMultiplier)
 		{
-			if (__instance.m_character is Player player && Utils.getPassivePowers(player).Contains(Power.Bonemass))
+			if (__instance.m_character is Player player && Utils.CanApplyPower(player, Power.Bonemass))
 			{
 				regenMultiplier += PassivePowers.healthRegenIncrease.Value / 100f;
 			}
@@ -119,6 +126,11 @@ public static class BossPowerPatches
 
 	private static float ModerShipFactor(Ship ship)
 	{
+		if (Player.m_localPlayer.GetSEMan().HaveStatusEffect("PassivePowers " + Power.Moder))
+		{
+			return 1;
+		}
+
 		List<Player> playersWithPower = ship.m_players.FindAll(p => Utils.getPassivePowers(p.m_nview.GetZDO()?.GetString("PassivePowers GuardianPowers") ?? "").Contains(Power.Moder));
 		return (float)playersWithPower.Count / Mathf.Max(1, ship.m_players.Count);
 	}

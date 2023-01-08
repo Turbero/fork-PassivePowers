@@ -14,13 +14,14 @@ using UnityEngine.UI;
 namespace PassivePowers;
 
 [BepInPlugin(ModGUID, ModName, ModVersion)]
+[BepInIncompatibility("org.bepinex.plugins.valheim_plus")]
 public class PassivePowers : BaseUnityPlugin
 {
 	private const string ModName = "Passive Powers";
-	private const string ModVersion = "1.0.6";
+	private const string ModVersion = "1.0.7";
 	private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
-	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = "1.0.6" };
+	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = "1.0.7" };
 
 	private static object? configManager;
 	private static void reloadConfigDisplay() => configManager?.GetType().GetMethod("BuildSettingList")!.Invoke(configManager, Array.Empty<object>());
@@ -61,7 +62,7 @@ public class PassivePowers : BaseUnityPlugin
 
 	private PowerConfig<T> powerConfig<T>(string powerName, string group, string name, T valuePassive, T valueActive, ConfigDescription description, bool synchronizedSetting = true)
 	{
-		return new()
+		return new PowerConfig<T>
 		{
 			powerName = powerName,
 			passive = config(group, "Passive: " + name, valuePassive, description, synchronizedSetting),
@@ -325,7 +326,6 @@ public class PassivePowers : BaseUnityPlugin
 					}
 					break;
 				}
-				
 				case Power.Queen:
 				{
 					if (value(eitrRegenIncrease) > 0)
