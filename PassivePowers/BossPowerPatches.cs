@@ -126,7 +126,7 @@ public static class BossPowerPatches
 
 	private static float ModerShipFactor(Ship ship)
 	{
-		if (Player.m_localPlayer.GetSEMan().HaveStatusEffect("PassivePowers " + Power.Moder))
+		if (Player.m_localPlayer?.GetSEMan().HaveStatusEffect("PassivePowers " + Power.Moder) == true)
 		{
 			return 1;
 		}
