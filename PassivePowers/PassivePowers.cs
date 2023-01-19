@@ -7,6 +7,7 @@ using System.Text;
 using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
+using LocalizationManager;
 using ServerSync;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,7 +19,7 @@ namespace PassivePowers;
 public class PassivePowers : BaseUnityPlugin
 {
 	private const string ModName = "Passive Powers";
-	private const string ModVersion = "1.0.8";
+	private const string ModVersion = "1.0.9";
 	private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
 	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = "1.0.8" };
@@ -76,6 +77,8 @@ public class PassivePowers : BaseUnityPlugin
 
 	public void Awake()
 	{
+		Localizer.Load();
+		
 		Assembly? bepinexConfigManager = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "ConfigurationManager");
 		Type? configManagerType = bepinexConfigManager?.GetType("ConfigurationManager.ConfigurationManager");
 		configManager = configManagerType == null ? null : BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent(configManagerType);
@@ -225,10 +228,11 @@ public class PassivePowers : BaseUnityPlugin
 
 					StatusEffect depletion_se = ScriptableObject.CreateInstance<StatusEffect>();
 					depletion_se.name = "PassivePowers Depletion " + original_se.name;
-					depletion_se.m_startMessage = $"The power of {original_se.m_name} has been depleted and will recharge over time.";
+					depletion_se.m_startMessage = Localization.instance.Localize("$powers_depleted_description", original_se.m_name);
 					depletion_se.m_startMessageType = original_se.m_startMessageType;
 					depletion_se.m_icon = original_se.m_icon;
-					depletion_se.m_name = "Depleted";
+					depletion_se.m_name = Localization.instance.Localize("$powers_depleted");
+					depletion_se.m_tooltip = Localization.instance.Localize("$powers_depleted_description", original_se.m_name);
 					depletion_se.m_ttl = activeBossPowerDepletion.Value;
 					EffectList.EffectData effectData = new()
 					{
@@ -266,15 +270,15 @@ public class PassivePowers : BaseUnityPlugin
 				{
 					if (value(runStaminaReduction) > 0)
 					{
-						powers.Add($"{type}: Reduces stamina usage while sprinting by {value(runStaminaReduction)}%");
+						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_eikthyr_run_stamina_reduction", value(runStaminaReduction).ToString()));
 					}
 					if (value(jumpStaminaReduction) > 0)
 					{
-						powers.Add($"{type}: Reduces stamina usage while jumping by {value(jumpStaminaReduction)}%");
+						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_eikthyr_jump_stamina_reduction", value(jumpStaminaReduction).ToString()));
 					}
 					if (value(movementSpeedIncrease) > 0)
 					{
-						powers.Add($"{type}: Increases movement speed by {value(movementSpeedIncrease)}%");
+						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_eikthyr_movement_speed_increase", value(movementSpeedIncrease).ToString()));
 					}
 					break;
 				}
@@ -282,11 +286,11 @@ public class PassivePowers : BaseUnityPlugin
 				{
 					if (value(treeDamageIncrease) > 0)
 					{
-						powers.Add($"{type}: Increases damage done to trees by {value(treeDamageIncrease)}%");
+						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_elder_tree_damage", value(treeDamageIncrease).ToString()));
 					}
 					if (value(miningDamageIncrease) > 0)
 					{
-						powers.Add($"{type}: Increases damage done to stones and veins by {value(miningDamageIncrease)}%");
+						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_elder_stone_damage", value(miningDamageIncrease).ToString()));
 					}
 					break;
 				}
@@ -294,11 +298,11 @@ public class PassivePowers : BaseUnityPlugin
 				{
 					if (value(phyiscalDamageReduction) > 0)
 					{
-						powers.Add($"{type}: Reduces physical damage taken by {value(phyiscalDamageReduction)}%");
+						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_bonemass_physical_damage_reduction", value(phyiscalDamageReduction).ToString()));
 					}
 					if (value(healthRegenIncrease) > 0)
 					{
-						powers.Add($"{type}: Increases health regeneration by {value(healthRegenIncrease)}%");
+						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_bonemass_health_regen_increase", value(healthRegenIncrease).ToString()));
 					}
 					break;
 				}
@@ -306,11 +310,11 @@ public class PassivePowers : BaseUnityPlugin
 				{
 					if (value(tailWindChance) > 0)
 					{
-						powers.Add($"{type}: Adds a {value(tailWindChance)}% chance to have tailwind while sailing");
+						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_moder_tailwind_chance", value(tailWindChance).ToString()));
 					}
 					if (value(windSpeedModifier) > 0)
 					{
-						powers.Add($"{type}: Modifies wind speed by up to {value(windSpeedModifier)}% while sailing");
+						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_moder_wind_modifier", value(windSpeedModifier).ToString()));
 					}
 					break;
 				}
@@ -318,11 +322,11 @@ public class PassivePowers : BaseUnityPlugin
 				{
 					if (value(elementalDamageReduction) > 0)
 					{
-						powers.Add($"{type}: Reduces elemental damage taken by {value(elementalDamageReduction)}%");
+						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_yagluth_elemental_damage_reduction", value(elementalDamageReduction).ToString()));
 					}
 					if (value(bonusFireDamage) > 0)
 					{
-						powers.Add($"{type}: Deals {value(bonusFireDamage)}% increased damage as fire");
+						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_yagluth_additional_fire_damage", value(bonusFireDamage).ToString()));
 					}
 					break;
 				}
@@ -330,20 +334,20 @@ public class PassivePowers : BaseUnityPlugin
 				{
 					if (value(eitrRegenIncrease) > 0)
 					{
-						powers.Add($"{type}: Increases Eitr regeneration by {value(eitrRegenIncrease)}%");
+						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_queen_eitr_regen", value(eitrRegenIncrease).ToString()));
 					}
 					break;
 				}
 			}
 		}
 
-		addTooltips(p => p.passive.Value, "Passive");
+		addTooltips(p => p.passive.Value, "passive");
 		if (activeBossPowers.GetToggle())
 		{
 			powers.Add("");
-			powers.Add($"Can be activated every {Utils.getHumanFriendlyTime(activeBossPowerCooldown.Value)} to gain the following effect for {Utils.getHumanFriendlyTime(activeBossPowerDuration.Value)}");
-			addTooltips(p => p.active.Value, "Active");
-			powers.Add($"Activating the power will disable the passive effect for {Utils.getHumanFriendlyTime(activeBossPowerDepletion.Value)} afterwards");
+			powers.Add(Localization.instance.Localize("$powers_activation_hint", Utils.getHumanFriendlyTime(activeBossPowerCooldown.Value), Utils.getHumanFriendlyTime(activeBossPowerDuration.Value)));
+			addTooltips(p => p.active.Value, "active");
+			powers.Add(Localization.instance.Localize("$powers_depletion_hint", Utils.getHumanFriendlyTime(activeBossPowerDepletion.Value)));
 		}
 
 		statusEffect.m_tooltip = string.Join("\n", powers);
@@ -567,7 +571,7 @@ public class PassivePowers : BaseUnityPlugin
 				hudPowers[index].root.gameObject.SetActive(false);
 			}
 
-			__instance.m_gpCooldown.text = activeBossPowers.GetToggle() ? remainingCooldown > 0f ? StatusEffect.GetTimeString(remainingCooldown) : Localization.instance.Localize("$hud_ready") : "Passive";
+			__instance.m_gpCooldown.text = activeBossPowers.GetToggle() ? remainingCooldown > 0f ? StatusEffect.GetTimeString(remainingCooldown) : Localization.instance.Localize("$hud_ready") : Localization.instance.Localize("$powers_type_passive");
 			return false;
 		}
 	}

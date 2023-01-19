@@ -21,7 +21,9 @@ public static class Utils
 	{
 		TimeSpan timeSpan = TimeSpan.FromSeconds(seconds);
 
-		return (timeSpan.TotalMinutes >= 1 ? $"{(int)timeSpan.TotalMinutes} minute" + (timeSpan.TotalMinutes >= 2 ? "s" : "") + (timeSpan.Seconds != 0 ? " and " : "") : "") + (timeSpan.Seconds != 0 ? $"{timeSpan.Seconds} second" + (timeSpan.Seconds >= 2 ? "s" : "") : "");
+		string secondsText = Localization.instance.Localize(timeSpan.Seconds >= 2 ? "$powers_second_plural" : "$powers_second_singular", timeSpan.Seconds.ToString());
+		string minutesText = Localization.instance.Localize(timeSpan.Minutes >= 2 ? "$powers_minute_plural" : "$powers_minute_singular", timeSpan.Minutes.ToString());
+		return timeSpan.TotalMinutes >= 1 ? timeSpan.Seconds == 0 ? minutesText : Localization.instance.Localize("$powers_time_bind", minutesText, secondsText) : secondsText;
 	}
 
 	public static bool CanApplyPower(Player player, string power) => getPassivePowers(player).Contains(power) || player.GetSEMan().HaveStatusEffect("PassivePowers " + power);
