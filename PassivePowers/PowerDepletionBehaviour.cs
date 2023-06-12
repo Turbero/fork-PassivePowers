@@ -9,7 +9,7 @@ public class PowerDepletionBehaviour : MonoBehaviour
 	{
 		if (Player.m_localPlayer)
 		{
-			Player.m_localPlayer.m_seman.AddStatusEffect(statusEffect);
+			Player.m_localPlayer.m_seman.AddStatusEffect(statusEffect.GetStableHashCode());
 			Destroy(gameObject);
 		}
 	}

@@ -19,10 +19,10 @@ namespace PassivePowers;
 public class PassivePowers : BaseUnityPlugin
 {
 	private const string ModName = "Passive Powers";
-	private const string ModVersion = "1.0.9";
+	private const string ModVersion = "1.0.10";
 	private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
-	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = "1.0.8" };
+	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = "1.0.10" };
 
 	private static object? configManager;
 	private static void reloadConfigDisplay() => configManager?.GetType().GetMethod("BuildSettingList")!.Invoke(configManager, Array.Empty<object>());
@@ -78,7 +78,7 @@ public class PassivePowers : BaseUnityPlugin
 	public void Awake()
 	{
 		Localizer.Load();
-		
+
 		Assembly? bepinexConfigManager = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "ConfigurationManager");
 		Type? configManagerType = bepinexConfigManager?.GetType("ConfigurationManager.ConfigurationManager");
 		configManager = configManagerType == null ? null : BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent(configManagerType);
