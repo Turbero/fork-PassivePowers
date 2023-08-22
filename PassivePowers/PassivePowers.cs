@@ -19,10 +19,10 @@ namespace PassivePowers;
 public class PassivePowers : BaseUnityPlugin
 {
 	private const string ModName = "Passive Powers";
-	private const string ModVersion = "1.0.10";
+	private const string ModVersion = "1.0.11";
 	private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
-	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = "1.0.10" };
+	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
 
 	private static object? configManager;
 	private static void reloadConfigDisplay() => configManager?.GetType().GetMethod("BuildSettingList")!.Invoke(configManager, Array.Empty<object>());
@@ -67,7 +67,7 @@ public class PassivePowers : BaseUnityPlugin
 		{
 			powerName = powerName,
 			passive = config(group, "Passive: " + name, valuePassive, description, synchronizedSetting),
-			active = config(group, "Active: " + name, valueActive, new ConfigDescription(description.Description, description.AcceptableValues, activeBossPowerSettingAttributes), synchronizedSetting)
+			active = config(group, "Active: " + name, valueActive, new ConfigDescription(description.Description, description.AcceptableValues, activeBossPowerSettingAttributes), synchronizedSetting),
 		};
 	}
 
@@ -156,10 +156,11 @@ public class PassivePowers : BaseUnityPlugin
 					{
 						string power = powers[i];
 
-						if (ObjectDB.instance.GetStatusEffect("PassivePowers " + power) is { } power_se)
+						if (ObjectDB.instance.GetStatusEffect(("PassivePowers " + power).GetStableHashCode()) is { } power_se)
 						{
-							Player.m_localPlayer.m_guardianSE = power_se;
+							Player.m_localPlayer.m_guardianSE = ObjectDB.instance.GetStatusEffect(power.GetStableHashCode());
 							Player.m_localPlayer.StartGuardianPower();
+							Player.m_localPlayer.m_guardianSE = power_se;
 						}
 					}
 				}
@@ -236,7 +237,7 @@ public class PassivePowers : BaseUnityPlugin
 					depletion_se.m_ttl = activeBossPowerDepletion.Value;
 					EffectList.EffectData effectData = new()
 					{
-						m_prefab = new GameObject(original_se.name + " Depletion Prefab")
+						m_prefab = new GameObject(original_se.name + " Depletion Prefab"),
 					};
 					effectData.m_prefab.AddComponent<PowerDepletionBehaviour>().statusEffect = depletion_se.name;
 					power_se.m_stopEffects.m_effectPrefabs = new[] { effectData };
@@ -445,7 +446,7 @@ public class PassivePowers : BaseUnityPlugin
 			stringBuilder.Append("<color=yellow>" + Localization.instance.Localize("$inventory_selectedgp") + "</color>\n");
 			foreach (string power in powers)
 			{
-				if (ObjectDB.instance.GetStatusEffect(power) is { } se)
+				if (ObjectDB.instance.GetStatusEffect(power.GetStableHashCode()) is { } se)
 				{
 					UpdateStatusEffectTooltip(se);
 
@@ -515,7 +516,7 @@ public class PassivePowers : BaseUnityPlugin
 				{
 					root = root,
 					icon = root.Find("Icon").GetComponent<Image>(),
-					name = root.Find("Name").GetComponent<Text>()
+					name = root.Find("Name").GetComponent<Text>(),
 				});
 			}
 
@@ -525,8 +526,8 @@ public class PassivePowers : BaseUnityPlugin
 				transform =
 				{
 					parent = gpRoot,
-					localPosition = Vector3.zero
-				}
+					localPosition = Vector3.zero,
+				},
 			};
 			for (int i = gpRoot.childCount - 1; i >= 0; --i)
 			{
@@ -555,7 +556,7 @@ public class PassivePowers : BaseUnityPlugin
 			int index = 0;
 			foreach (string s in Utils.getPassivePowers(Player.m_localPlayer))
 			{
-				if (ObjectDB.instance.GetStatusEffect(s) is { } se)
+				if (ObjectDB.instance.GetStatusEffect(s.GetStableHashCode()) is { } se)
 				{
 					hudPowers[index].root.gameObject.SetActive(true);
 					hudPowers[index].name.text = Localization.instance.Localize(se.m_name);
