@@ -9,6 +9,7 @@ using BepInEx.Configuration;
 using HarmonyLib;
 using LocalizationManager;
 using ServerSync;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,7 +20,7 @@ namespace PassivePowers;
 public class PassivePowers : BaseUnityPlugin
 {
 	private const string ModName = "Passive Powers";
-	private const string ModVersion = "1.0.11";
+	private const string ModVersion = "1.0.12";
 	private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
 	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
@@ -497,7 +498,7 @@ public class PassivePowers : BaseUnityPlugin
 	private class HudPower
 	{
 		public Transform root = null!;
-		public Text name = null!;
+		public TMP_Text name = null!;
 		public Image icon = null!;
 	}
 
@@ -516,7 +517,7 @@ public class PassivePowers : BaseUnityPlugin
 				{
 					root = root,
 					icon = root.Find("Icon").GetComponent<Image>(),
-					name = root.Find("Name").GetComponent<Text>(),
+					name = root.Find("Name").GetComponent<TMP_Text>(),
 				});
 			}
 
