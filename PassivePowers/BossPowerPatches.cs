@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace PassivePowers;
 
@@ -11,136 +13,153 @@ namespace PassivePowers;
 public static class BossPowerPatches
 {
 	[HarmonyPatch(typeof(SEMan), nameof(SEMan.ModifyRunStaminaDrain))]
-	private class Patch_SEMan_ModifyRunStaminaDrain
+	private class ReduceRunStaminaUsage
 	{
 		private static void Prefix(SEMan __instance, ref float drain)
 		{
-			if (__instance.m_character is Player player && Utils.CanApplyPower(player, Power.Eikthyr))
+			if (__instance.m_character is Player)
 			{
-				drain *= 1 - PassivePowers.runStaminaReduction.Value / 100f;
+				drain *= 1 - RunStamina.Total() / 100f;
 			}
 		}
 	}
 
 	[HarmonyPatch(typeof(SEMan), nameof(SEMan.ModifyJumpStaminaUsage))]
-	private class Patch_SEMan_ModifyJumpStaminaDrain
+	private class ReduceJumpStaminaUsage
 	{
 		private static void Prefix(SEMan __instance, ref float staminaUse)
 		{
-			if (__instance.m_character is Player player && Utils.CanApplyPower(player, Power.Eikthyr))
+			if (__instance.m_character is Player)
 			{
-				staminaUse *= 1 - PassivePowers.jumpStaminaReduction.Value / 100f;
+				staminaUse *= 1 - JumpStamina.Total() / 100f;
 			}
 		}
 	}
 
 	[HarmonyPatch(typeof(Player), nameof(Player.GetJogSpeedFactor))]
-	private class Patch_Player_GetJogSpeedFactor
+	private class IncreaseJogSpeed
 	{
-		private static void Postfix(Player __instance, ref float __result)
+		private static void Postfix(ref float __result)
 		{
-			if (Utils.CanApplyPower(__instance, Power.Eikthyr))
-			{
-				__result += PassivePowers.movementSpeedIncrease.Value / 100f;
-			}
+			__result += MovementSpeed.Total() / 100f;
 		}
 	}
 
 	[HarmonyPatch(typeof(Player), nameof(Player.GetRunSpeedFactor))]
-	private class Patch_Player_GetRunSpeedFactor
+	private class IncreaseRunSpeed
 	{
-		private static void Postfix(Player __instance, ref float __result)
+		private static void Postfix(ref float __result)
 		{
-			if (Utils.CanApplyPower(__instance, Power.Eikthyr))
+			__result += MovementSpeed.Total() / 100f;
+		}
+	}
+
+	[HarmonyPatch(typeof(Character), nameof(Character.UpdateSwimming))]
+	private class IncreaseSwimSpeed
+	{
+		private static void Prefix(Character __instance)
+		{
+			if (__instance is Player player)
 			{
-				__result += PassivePowers.movementSpeedIncrease.Value / 100f;
+				player.m_swimSpeed *= 1 + SwimSpeed.Total() / 100f;
+			}
+		}
+
+		private static void Postfix(Character __instance)
+		{
+			if (__instance is Player player)
+			{
+				player.m_swimSpeed /= 1 + SwimSpeed.Total() / 100f;
 			}
 		}
 	}
 
 	[HarmonyPatch(typeof(SEMan), nameof(SEMan.ModifyAttack))]
-	private class Patch_SEMan_ModifyAttack
+	private class IncreaseTerrainDamage
 	{
 		private static void Prefix(SEMan __instance, ref HitData hitData)
 		{
-			if (__instance.m_character is Player player)
+			if (__instance.m_character is Player)
 			{
-				if (Utils.CanApplyPower(player, Power.TheElder))
-				{
-					hitData.m_damage.m_chop *= 1 + PassivePowers.treeDamageIncrease.Value / 100f;
-					hitData.m_damage.m_pickaxe *= 1 + PassivePowers.miningDamageIncrease.Value / 100f;
-				}
+				hitData.m_damage.m_chop *= 1 + TreeDamage.Total() / 100f;
+				hitData.m_damage.m_pickaxe *= 1 + MiningDamage.Total() / 100f;
 			}
 		}
 	}
 
 	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
-	private class Patch_Character_RPC_Damage
+	private class DecreaseDamageTaken
 	{
 		private static void Prefix(Character __instance, HitData hit)
 		{
-			if (__instance is Player player)
+			if (__instance is Player)
 			{
-				if (Utils.CanApplyPower(player, Power.Bonemass))
-				{
-					hit.m_damage.m_blunt *= 1 - PassivePowers.phyiscalDamageReduction.Value / 100f;
-					hit.m_damage.m_pierce *= 1 - PassivePowers.phyiscalDamageReduction.Value / 100f;
-					hit.m_damage.m_slash *= 1 - PassivePowers.phyiscalDamageReduction.Value / 100f;
-				}
+				hit.m_damage.m_blunt *= 1 - PhysicalDamage.Total() / 100f;
+				hit.m_damage.m_pierce *= 1 - PhysicalDamage.Total() / 100f;
+				hit.m_damage.m_slash *= 1 - PhysicalDamage.Total() / 100f;
 
-				if (Utils.CanApplyPower(player, Power.Yagluth))
-				{
-					hit.m_damage.m_fire *= 1 - PassivePowers.elementalDamageReduction.Value / 100f;
-					hit.m_damage.m_frost *= 1 - PassivePowers.elementalDamageReduction.Value / 100f;
-					hit.m_damage.m_poison *= 1 - PassivePowers.elementalDamageReduction.Value / 100f;
-					hit.m_damage.m_lightning *= 1 - PassivePowers.elementalDamageReduction.Value / 100f;
-				}
+				hit.m_damage.m_fire *= 1 - ElementalDamage.Total() / 100f;
+				hit.m_damage.m_frost *= 1 - ElementalDamage.Total() / 100f;
+				hit.m_damage.m_poison *= 1 - ElementalDamage.Total() / 100f;
+				hit.m_damage.m_lightning *= 1 - ElementalDamage.Total() / 100f;
 			}
 		}
 	}
 
 	[HarmonyPatch(typeof(Character), nameof(Character.Damage))]
-	private class Patch_Character_Damage
+	private class AddFireDamage
 	{
 		private static void Prefix(HitData hit)
 		{
-			if (hit.GetAttacker() is Player attacker && Utils.CanApplyPower(attacker, Power.Yagluth))
+			if (hit.GetAttacker() is Player)
 			{
-				hit.m_damage.m_fire += hit.GetTotalDamage() * PassivePowers.bonusFireDamage.Value / 100f;
+				hit.m_damage.m_fire += hit.GetTotalDamage() * BonusFireDamage.Total() / 100f;
 			}
 		}
 	}
 
 	[HarmonyPatch(typeof(SEMan), nameof(SEMan.ModifyHealthRegen))]
-	public static class Patch_SEMan_ModifyHealthRegen
+	public static class IncreaseHealthRegen
 	{
 		[UsedImplicitly]
 		public static void Postfix(SEMan __instance, ref float regenMultiplier)
 		{
-			if (__instance.m_character is Player player && Utils.CanApplyPower(player, Power.Bonemass))
+			if (__instance.m_character is Player)
 			{
-				regenMultiplier += PassivePowers.healthRegenIncrease.Value / 100f;
+				regenMultiplier += HealthRegen.Total() / 100f;
 			}
 		}
 	}
 
-	private static float ModerShipFactor(Ship ship)
+	private static float ShipValue(Ship ship, Type type)
 	{
-		if (Player.m_localPlayer?.GetSEMan().HaveStatusEffect("PassivePowers " + Power.Moder) == true)
+		float active = (float)type.GetMethod("Total")!.Invoke(null, Array.Empty<object>()) / 100;
+		if (active > 0)
 		{
-			return 1;
+			return active;
 		}
 
-		List<Player> playersWithPower = ship.m_players.FindAll(p => Utils.getPassivePowers(p.m_nview.GetZDO()?.GetString("PassivePowers GuardianPowers") ?? "").Contains(Power.Moder));
-		return (float)playersWithPower.Count / Mathf.Max(1, ship.m_players.Count);
+		float passive = 0;
+		foreach (KeyValuePair<string, BossConfig> kv in PassivePowers.activeBossConfigs)
+		{
+			foreach (PowerConfig cfg in kv.Value.Configs)
+			{
+				if (cfg.GetType() == type)
+				{
+					List<Player> playersWithPower = ship.m_players.FindAll(p => Utils.getPassivePowers(p.m_nview.GetZDO()?.GetString("PassivePowers GuardianPowers") ?? "").Contains(kv.Key));
+					passive += (float)cfg.BoxedPassive * playersWithPower.Count / Mathf.Max(1, ship.m_players.Count);
+				}
+			}
+		}
+		return passive;
 	}
 
 	[HarmonyPatch(typeof(Ship), nameof(Ship.IsWindControllActive))]
-	private class Patch_Ship_IsWindControllActive
+	private class TurnWindInFavor
 	{
 		private static void Postfix(Ship __instance, ref bool __result)
 		{
-			float chance = PassivePowers.tailWindChance.Value / 100f * ModerShipFactor(__instance);
+			float chance = ShipValue(__instance, typeof(TailWind));
 
 			Random.State state = Random.state;
 			Random.InitState((int)(EnvMan.instance.m_totalSeconds / EnvMan.instance.m_windPeriodDuration));
@@ -153,11 +172,11 @@ public static class BossPowerPatches
 	}
 
 	[HarmonyPatch(typeof(Ship), nameof(Ship.GetSailForce))]
-	private class Patch_Ship_GetSailForce
+	private class IncreaseSailingSpeed
 	{
 		private static float UpdateWindIntensity(float windIntensity, Ship ship)
 		{
-			float modifier = PassivePowers.windSpeedModifier.Value / 100f * ModerShipFactor(ship);
+			float modifier = ShipValue(ship, typeof(WindSpeed));
 			if (Vector3.Angle(ship.transform.forward, EnvMan.instance.GetWindDir()) > 90)
 			{
 				return windIntensity * (1 - modifier);
@@ -166,7 +185,7 @@ public static class BossPowerPatches
 		}
 
 		private static readonly MethodInfo WindIntensityGetter = AccessTools.DeclaredMethod(typeof(EnvMan), nameof(EnvMan.GetWindIntensity));
-		private static readonly MethodInfo WindIntensityUpdater = AccessTools.DeclaredMethod(typeof(Patch_Ship_GetSailForce), nameof(UpdateWindIntensity));
+		private static readonly MethodInfo WindIntensityUpdater = AccessTools.DeclaredMethod(typeof(IncreaseSailingSpeed), nameof(UpdateWindIntensity));
 
 		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
@@ -187,7 +206,17 @@ public static class BossPowerPatches
 	{
 		private static void Prefix(ref float eitrMultiplier)
 		{
-			eitrMultiplier *= 1 + PassivePowers.eitrRegenIncrease.Value / 100f;
+			eitrMultiplier *= 1 + EitrRegen.Total() / 100f;
+		}
+	}
+
+	[HarmonyPatch(typeof(Player), nameof(Player.GetMaxCarryWeight))]
+	private static class IncreaseCarryWeight
+	{
+		[UsedImplicitly]
+		private static void Postfix(Player __instance, ref float __result)
+		{
+			__result *= 1 + CarryWeight.Total() / 100f;
 		}
 	}
 }

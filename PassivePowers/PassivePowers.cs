@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -20,35 +21,27 @@ namespace PassivePowers;
 public class PassivePowers : BaseUnityPlugin
 {
 	private const string ModName = "Passive Powers";
-	private const string ModVersion = "1.0.12";
+	private const string ModVersion = "1.1.0";
 	private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
 	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
 
-	private static object? configManager;
+	public static object? configManager;
 	private static void reloadConfigDisplay() => configManager?.GetType().GetMethod("BuildSettingList")!.Invoke(configManager, Array.Empty<object>());
 
-	private const int bossPowerCount = 6;
+	private const int bossPowerCount = 7;
 
 	private static ConfigEntry<Toggle> serverConfigLocked = null!;
 	public static ConfigEntry<int> maximumBossPowers = null!;
-	private static ConfigEntry<Toggle> activeBossPowers = null!;
 	private static ConfigEntry<int> activeBossPowerCooldown = null!;
 	private static ConfigEntry<int> activeBossPowerDuration = null!;
 	private static ConfigEntry<int> activeBossPowerDepletion = null!;
 	private static readonly ConfigEntry<KeyboardShortcut>[] bossPowerKeys = new ConfigEntry<KeyboardShortcut>[bossPowerCount];
-	public static PowerConfig<int> runStaminaReduction = null!;
-	public static PowerConfig<int> jumpStaminaReduction = null!;
-	public static PowerConfig<int> movementSpeedIncrease = null!;
-	public static PowerConfig<int> treeDamageIncrease = null!;
-	public static PowerConfig<int> miningDamageIncrease = null!;
-	public static PowerConfig<int> phyiscalDamageReduction = null!;
-	public static PowerConfig<int> healthRegenIncrease = null!;
-	public static PowerConfig<int> tailWindChance = null!;
-	public static PowerConfig<int> windSpeedModifier = null!;
-	public static PowerConfig<int> elementalDamageReduction = null!;
-	public static PowerConfig<int> bonusFireDamage = null!;
-	public static PowerConfig<int> eitrRegenIncrease = null!;
+	private static readonly Dictionary<string, ConfigEntry<string>> bossConfigs = new();
+	public static readonly Dictionary<string, BossConfig> activeBossConfigs = new();
+	public static readonly Dictionary<string, ConfigEntry<int>> requiredBossKillsPassive = new();
+	public static readonly Dictionary<string, ConfigEntry<int>> requiredBossKillsActive = new();
+	private static readonly Dictionary<string, ConfigEntry<Spread>> PowerSpread = new();
 
 	private static float remainingCooldown => Player.m_localPlayer.m_guardianPowerCooldown;
 
@@ -62,15 +55,25 @@ public class PassivePowers : BaseUnityPlugin
 		return configEntry;
 	}
 
-	private PowerConfig<T> powerConfig<T>(string powerName, string group, string name, T valuePassive, T valueActive, ConfigDescription description, bool synchronizedSetting = true)
+	private void bossConfig(string PowerName, int index, string bossName, string defaults)
 	{
-		return new PowerConfig<T>
-		{
-			powerName = powerName,
-			passive = config(group, "Passive: " + name, valuePassive, description, synchronizedSetting),
-			active = config(group, "Active: " + name, valueActive, new ConfigDescription(description.Description, description.AcceptableValues, activeBossPowerSettingAttributes), synchronizedSetting),
-		};
+		string category = $"{index} - {bossName}";
+		ConfigEntry<string> cfg = config(category, "Effects", defaults, new ConfigDescription($"Powers of {bossName}", null, new ConfigurationManagerAttributes { CustomDrawer = BossConfig.DrawConfigTable(PowerName), Order = -10 }));
+		cfg.SettingChanged += (_, _) => bossConfigChanged(PowerName);
+		bossConfigs[PowerName] = cfg;
+		bossConfigChanged(PowerName);
+
+		ConfigEntry<int> cfgMinPassive = config(category, "Min kills (Passive)", 1, new ConfigDescription($"Minimum required kills of {bossName} to be able to use the passive power of the boss. Use 0 to allow everyone to use the passive power as soon as the trophy is hanging on the boss stone."));
+		requiredBossKillsPassive[PowerName] = cfgMinPassive;
+
+		ConfigEntry<int> cfgMinActive = config(category, "Min kills (Active)", -1, new ConfigDescription($"Minimum required kills of {bossName} to be able to use the active power of the boss. Use -1 to disable the active power and only allow the passive power."));
+		requiredBossKillsActive[PowerName] = cfgMinActive;
+
+		ConfigEntry<Spread> cfgSpread = config(category, "Activation spread", Spread.Everyone, new ConfigDescription($"Self: Only the player activating the boss power gets the buff.\nConditions Met: Only the nearby players that have the required boss kills receive the buff.\nEveryone: Every nearby player gets the buff."));
+		PowerSpread[PowerName] = cfgSpread;
 	}
+
+	private static void bossConfigChanged(string PowerName) => activeBossConfigs[PowerName] = new BossConfig(bossConfigs[PowerName].Value);
 
 	private ConfigEntry<T> config<T>(string group, string name, T value, string description, bool synchronizedSetting = true) => config(group, name, value, new ConfigDescription(description), synchronizedSetting);
 
@@ -86,25 +89,20 @@ public class PassivePowers : BaseUnityPlugin
 
 		serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On, "If on, the configuration is locked and can be changed by server admins only.");
 		maximumBossPowers = config("1 - General", "Maximum boss powers", 2, new ConfigDescription("Sets the maximum number of boss powers that can be active at the same time.", new AcceptableValueRange<int>(1, bossPowerCount)));
-		activeBossPowers = config("2 - Active Powers", "Boss powers can be activated", Toggle.Off, "Boss powers can still be activated.");
 		activeBossPowerCooldown = config("2 - Active Powers", "Cooldown for boss powers (seconds)", 600, new ConfigDescription("Cooldown after activating one of the boss powers. Cooldown is shared between all boss powers.", null, activeBossPowerSettingAttributes));
 		activeBossPowerCooldown.SettingChanged += activeBossPowerSettingChanged;
 		activeBossPowerDuration = config("2 - Active Powers", "Duration for active boss powers (seconds)", 30, new ConfigDescription("Duration of the buff from activating boss powers.", null, activeBossPowerSettingAttributes));
 		activeBossPowerDuration.SettingChanged += activeBossPowerSettingChanged;
 		activeBossPowerDepletion = config("2 - Active Powers", "Power loss duration after boss power activation (seconds)", 180, new ConfigDescription("Disables the passive effect of the boss power for the specified duration after the active effect ends.", null, activeBossPowerSettingAttributes));
 		activeBossPowerDepletion.SettingChanged += activeBossPowerSettingChanged;
-		runStaminaReduction = powerConfig(Power.Eikthyr, "2 - Eikthyr", "Run stamina reduction (percentage)", 15, 40, new ConfigDescription("Reduces the stamina usage while running.", new AcceptableValueRange<int>(0, 100)));
-		jumpStaminaReduction = powerConfig(Power.Eikthyr, "2 - Eikthyr", "Jump stamina reduction (percentage)", 15, 40, new ConfigDescription("Reduces the stamina usage while jumping.", new AcceptableValueRange<int>(0, 100)));
-		movementSpeedIncrease = powerConfig(Power.Eikthyr, "2 - Eikthyr", "Movement speed increase (percentage)", 0, 35, new ConfigDescription("Increases the movement speed.", new AcceptableValueRange<int>(0, 100)));
-		treeDamageIncrease = powerConfig(Power.TheElder, "3 - The Elder", "Damage increase to trees (percentage)", 20, 200, new ConfigDescription("Increases the damage done to trees.", new AcceptableValueRange<int>(0, 500)));
-		miningDamageIncrease = powerConfig(Power.TheElder, "3 - The Elder", "Damage increase while mining (percentage)", 20, 200, new ConfigDescription("Increases the damage done to veins and stone.", new AcceptableValueRange<int>(0, 500)));
-		phyiscalDamageReduction = powerConfig(Power.Bonemass, "4 - Bonemass", "Physical damage reduction (percentage)", 10, 85, new ConfigDescription("Reduces the phyiscal damage taken.", new AcceptableValueRange<int>(0, 100)));
-		healthRegenIncrease = powerConfig(Power.Bonemass, "4 - Bonemass", "Health regeneration increase (percentage)", 10, 200, new ConfigDescription("Increases the health regeneration.", new AcceptableValueRange<int>(0, 500)));
-		tailWindChance = powerConfig(Power.Moder, "5 - Moder", "Chance increase for tailwind (percentage)", 20, 100, new ConfigDescription("Increases the chance to get tailwind while sailing.", new AcceptableValueRange<int>(0, 100)));
-		windSpeedModifier = powerConfig(Power.Moder, "5 - Moder", "Modifies the wind speed (percentage)", 35, 200, new ConfigDescription("Increases the speed of tailwind, decreases the speed of headwind.", new AcceptableValueRange<int>(0, 500)));
-		elementalDamageReduction = powerConfig(Power.Yagluth, "6 - Yagluth", "Elemental damage reduction (percentage)", 10, 85, new ConfigDescription("Reduces the elemental damage taken.", new AcceptableValueRange<int>(0, 100)));
-		bonusFireDamage = powerConfig(Power.Yagluth, "6 - Yagluth", "Bonus fire damage (percentage)", 10, 100, new ConfigDescription("Adds a percentage of your weapon damage as bonus fire damage to your attacks.", new AcceptableValueRange<int>(0, 500)));
-		eitrRegenIncrease = powerConfig(Power.Queen, "7 - Queen", "Eitr regeneration increase (percentage)", 25, 300, new ConfigDescription("Increases the Eitr regeneration.", new AcceptableValueRange<int>(0, 500)));
+
+		bossConfig(Power.Eikthyr, 3, "Eikthyr", "MovementSpeed:0:25,RunStamina:15:40,JumpStamina:15:40");
+		bossConfig(Power.TheElder, 4, "The Elder", "TreeDamage:20:200,MiningDamage:20:200");
+		bossConfig(Power.Bonemass, 5, "Bonemass", "PhysicalDamage:10:85,HealthRegen:10:200");
+		bossConfig(Power.Moder, 6, "Moder", "TailWind:20:100,WindModifier:35:200");
+		bossConfig(Power.Yagluth, 7, "Yagluth", "ElementalDamage:10:85,BonusFireDamage:10:100");
+		bossConfig(Power.Queen, 8, "Queen", "EitrRegen:25:300,SwimSpeed:20:40");
+		bossConfig(Power.Fader, 9, "Fader", "CarryWeight:25:300,MovementSpeed:10:35");
 
 		for (int i = 0; i < bossPowerCount; ++i)
 		{
@@ -113,23 +111,43 @@ public class PassivePowers : BaseUnityPlugin
 
 		configSync.AddLockingConfigEntry(serverConfigLocked);
 
-		activeBossPowerSettingAttributes.Browsable = activeBossPowers.Value == Toggle.On;
-		activeBossPowers.SettingChanged += (_, _) =>
+		activeBossPowerSettingAttributes.Browsable = Utils.ActivePowersEnabled();
+		foreach (ConfigEntry<int> requiredKills in requiredBossKillsActive.Values)
 		{
-			activeBossPowerSettingAttributes.Browsable = activeBossPowers.Value == Toggle.On;
-			reloadConfigDisplay();
-		};
+			requiredKills.SettingChanged += (_, _) =>
+			{
+				activeBossPowerSettingAttributes.Browsable = Utils.ActivePowersEnabled();
+				reloadConfigDisplay();
+			};
+		}
 
 		Assembly assembly = Assembly.GetExecutingAssembly();
 		Harmony harmony = new(ModGUID);
 		harmony.PatchAll(assembly);
 	}
 
+	[HarmonyPatch(typeof(Player), nameof(Player.Awake))]
+	private static class AddRPCs
+	{
+		private static void Postfix(Player __instance)
+		{
+			__instance.m_nview.Register<string>("PassivePowers Activate BossPower", ActivateBossPowerRPC);
+		}
+	}
+
+	private static void ActivateBossPowerRPC(long peer, string bossPower)
+	{
+		if (Utils.ActivePowerEnabled(bossPower.Substring("PassivePowers ".Length)))
+		{
+			Player.m_localPlayer.GetSEMan().AddStatusEffect(bossPower.GetStableHashCode(), true);
+		}
+	}
+
 	private static void activeBossPowerSettingChanged(object o, EventArgs e)
 	{
 		foreach (StatusEffect statusEffect in ObjectDB.instance.m_StatusEffects)
 		{
-			if (statusEffect.name.StartsWith("PassivePowers"))
+			if (statusEffect.name.StartsWith("PassivePowers", StringComparison.Ordinal))
 			{
 				if (statusEffect.name.Contains("Depletion"))
 				{
@@ -146,11 +164,11 @@ public class PassivePowers : BaseUnityPlugin
 
 	private void Update()
 	{
-		if (activeBossPowers.GetToggle())
+		if (Utils.ActivePowersEnabled())
 		{
 			for (int i = 0; i < bossPowerKeys.Length; ++i)
 			{
-				if (bossPowerKeys[i].Value.IsDown() && Player.m_localPlayer.TakeInput())
+				if (bossPowerKeys[i].Value.IsKeyDown() && Player.m_localPlayer.TakeInput())
 				{
 					List<string> powers = Utils.getPassivePowers(Player.m_localPlayer);
 					if (i < powers.Count)
@@ -159,9 +177,20 @@ public class PassivePowers : BaseUnityPlugin
 
 						if (ObjectDB.instance.GetStatusEffect(("PassivePowers " + power).GetStableHashCode()) is { } power_se)
 						{
-							Player.m_localPlayer.m_guardianSE = ObjectDB.instance.GetStatusEffect(power.GetStableHashCode());
-							Player.m_localPlayer.StartGuardianPower();
-							Player.m_localPlayer.m_guardianSE = power_se;
+							if (Utils.ActivePowerEnabled(power))
+							{
+								Player.m_localPlayer.m_guardianSE = ObjectDB.instance.GetStatusEffect(power.GetStableHashCode());
+								Player.m_localPlayer.StartGuardianPower();
+								Player.m_localPlayer.m_guardianSE = power_se;
+							}
+							else if (requiredBossKillsActive[power].Value > 0)
+							{
+								Player.m_localPlayer.Message(MessageHud.MessageType.Center, Localization.instance.Localize("$powers_min_kills_active", requiredBossKillsActive[power].Value.ToString()));
+							}
+							else
+							{
+								Player.m_localPlayer.Message(MessageHud.MessageType.Center, Localization.instance.Localize("$powers_not_active"));
+							}
 						}
 					}
 				}
@@ -170,12 +199,12 @@ public class PassivePowers : BaseUnityPlugin
 	}
 
 	[HarmonyPatch(typeof(Player), nameof(Player.Update))]
-	private class Patch_Player_Update
+	private class ActivateBossPower
 	{
-		public static bool CheckKeyDown(bool activeKey) => activeKey && !bossPowerKeys.Any(powerKey => powerKey.Value.IsDown());
+		public static bool CheckKeyDown(bool activeKey) => activeKey && !bossPowerKeys.Any(powerKey => powerKey.Value.IsKeyDown());
 
-		private static readonly MethodInfo CheckInputKey = AccessTools.DeclaredMethod(typeof(Patch_Player_Update), nameof(CheckKeyDown));
-		private static readonly MethodInfo InputKey = AccessTools.DeclaredMethod(typeof(Input), nameof(Input.GetKeyDown), new[] { typeof(KeyCode) });
+		private static readonly MethodInfo CheckInputKey = AccessTools.DeclaredMethod(typeof(ActivateBossPower), nameof(CheckKeyDown));
+		private static readonly MethodInfo InputKey = AccessTools.DeclaredMethod(typeof(ZInput), nameof(ZInput.GetButtonDown));
 		private static readonly MethodInfo GuardianPowerStart = AccessTools.DeclaredMethod(typeof(Player), nameof(Player.StartGuardianPower));
 
 		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -199,8 +228,44 @@ public class PassivePowers : BaseUnityPlugin
 		}
 	}
 
+	[HarmonyPatch(typeof(Player), nameof(Player.ActivateGuardianPower))]
+	private static class DedicatedGuardianPowerRPC
+	{
+		private static StatusEffect? StatusEffectRPC(SEMan seman, int nameHash, bool resetTime, int itemLevel, float skillLevel)
+		{
+			string name = ObjectDB.instance.GetStatusEffect(nameHash).name;
+			Spread spread = PowerSpread[name.Substring("PassivePowers ".Length)].Value;
+			if (spread == Spread.ConditionsMet)
+			{
+				seman.m_nview.InvokeRPC("PassivePowers Activate BossPower", name);
+			}
+			else if (spread == Spread.Everyone || Player.m_localPlayer == seman.m_character)
+			{
+				return seman.AddStatusEffect(nameHash, resetTime, itemLevel, skillLevel);
+			}
+			return null;
+		}
+
+		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			MethodInfo AddStatusEffect = AccessTools.DeclaredMethod(typeof(SEMan), nameof(SEMan.AddStatusEffect), new[] { typeof(int), typeof(bool), typeof(int), typeof(float) });
+
+			foreach (CodeInstruction instruction in instructions)
+			{
+				if (instruction.Calls(AddStatusEffect))
+				{
+					yield return new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(DedicatedGuardianPowerRPC), nameof(StatusEffectRPC)));
+				}
+				else
+				{
+					yield return instruction;
+				}
+			}
+		}
+	}
+
 	[HarmonyPatch]
-	public class Patch_ObjectDB_Awake_CopyOtherDB
+	public class AddStatusEffects
 	{
 		private static IEnumerable<MethodBase> TargetMethods() => new[]
 		{
@@ -250,7 +315,7 @@ public class PassivePowers : BaseUnityPlugin
 	}
 
 	[HarmonyPatch(typeof(ItemStand), nameof(ItemStand.IsGuardianPowerActive))]
-	private class Patch_ItemStand_IsGuardianPowerActive
+	private class RemoveActiveTooltip
 	{
 		private static void Postfix(out bool __result)
 		{
@@ -264,91 +329,37 @@ public class PassivePowers : BaseUnityPlugin
 
 		List<string> powers = new();
 
-		void addTooltips(Func<PowerConfig<int>, int> value, string type)
+		void addTooltips(Func<PowerConfig, int> value, string type)
 		{
-			switch (statusEffect.name)
+			foreach (PowerConfig config in activeBossConfigs[statusEffect.name].Configs)
 			{
-				case Power.Eikthyr:
+				int val = value(config);
+				if (val > 0)
 				{
-					if (value(runStaminaReduction) > 0)
-					{
-						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_eikthyr_run_stamina_reduction", value(runStaminaReduction).ToString()));
-					}
-					if (value(jumpStaminaReduction) > 0)
-					{
-						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_eikthyr_jump_stamina_reduction", value(jumpStaminaReduction).ToString()));
-					}
-					if (value(movementSpeedIncrease) > 0)
-					{
-						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_eikthyr_movement_speed_increase", value(movementSpeedIncrease).ToString()));
-					}
-					break;
-				}
-				case Power.TheElder:
-				{
-					if (value(treeDamageIncrease) > 0)
-					{
-						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_elder_tree_damage", value(treeDamageIncrease).ToString()));
-					}
-					if (value(miningDamageIncrease) > 0)
-					{
-						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_elder_stone_damage", value(miningDamageIncrease).ToString()));
-					}
-					break;
-				}
-				case Power.Bonemass:
-				{
-					if (value(phyiscalDamageReduction) > 0)
-					{
-						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_bonemass_physical_damage_reduction", value(phyiscalDamageReduction).ToString()));
-					}
-					if (value(healthRegenIncrease) > 0)
-					{
-						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_bonemass_health_regen_increase", value(healthRegenIncrease).ToString()));
-					}
-					break;
-				}
-				case Power.Moder:
-				{
-					if (value(tailWindChance) > 0)
-					{
-						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_moder_tailwind_chance", value(tailWindChance).ToString()));
-					}
-					if (value(windSpeedModifier) > 0)
-					{
-						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_moder_wind_modifier", value(windSpeedModifier).ToString()));
-					}
-					break;
-				}
-				case Power.Yagluth:
-				{
-					if (value(elementalDamageReduction) > 0)
-					{
-						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_yagluth_elemental_damage_reduction", value(elementalDamageReduction).ToString()));
-					}
-					if (value(bonusFireDamage) > 0)
-					{
-						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_yagluth_additional_fire_damage", value(bonusFireDamage).ToString()));
-					}
-					break;
-				}
-				case Power.Queen:
-				{
-					if (value(eitrRegenIncrease) > 0)
-					{
-						powers.Add(Localization.instance.Localize($"$powers_type_{type}: $powers_queen_eitr_regen", value(eitrRegenIncrease).ToString()));
-					}
-					break;
+					powers.Add(Localization.instance.Localize($"$powers_type_{type}: {config.Desc}", val.ToString()));
 				}
 			}
 		}
 
-		addTooltips(p => p.passive.Value, "passive");
-		if (activeBossPowers.GetToggle())
+		int requiredKills = requiredBossKillsPassive[statusEffect.name].Value;
+		powers.Add("");
+		if (requiredKills > 0)
+		{
+			powers.Add(Localization.instance.Localize("$powers_min_kills_passive", requiredKills.ToString()));
+		}
+		addTooltips(p => (int)p.BoxedPassive, "passive");
+
+		requiredKills = requiredBossKillsActive[statusEffect.name].Value;
+		if (requiredKills >= 0)
 		{
 			powers.Add("");
+			if (requiredKills > 0)
+			{
+				powers.Add(Localization.instance.Localize("$powers_min_kills_active", requiredKills.ToString()));
+				powers.Add("");
+			}
 			powers.Add(Localization.instance.Localize("$powers_activation_hint", Utils.getHumanFriendlyTime(activeBossPowerCooldown.Value), Utils.getHumanFriendlyTime(activeBossPowerDuration.Value)));
-			addTooltips(p => p.active.Value, "active");
+			addTooltips(p => (int)p.BoxedActive, "active");
 			powers.Add(Localization.instance.Localize("$powers_depletion_hint", Utils.getHumanFriendlyTime(activeBossPowerDepletion.Value)));
 		}
 
@@ -356,11 +367,11 @@ public class PassivePowers : BaseUnityPlugin
 	}
 
 	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.GetTooltipString))]
-	private class Patch_SE_Stats_GetTooltipString
+	private class RemoveOriginalEffectDescription
 	{
 		private static void Postfix(SE_Stats __instance, ref string __result)
 		{
-			if (__instance.name.StartsWith("GP_"))
+			if (__instance.name.StartsWith("GP_", StringComparison.Ordinal))
 			{
 				__result = __instance.m_tooltip;
 			}
@@ -368,7 +379,7 @@ public class PassivePowers : BaseUnityPlugin
 	}
 
 	[HarmonyPatch(typeof(ItemStand), nameof(ItemStand.GetHoverText))]
-	private class Patch_ItemStand_GetHoverText
+	private class ModifyBossStoneHoverText
 	{
 		private static void Prefix(ItemStand __instance)
 		{
@@ -387,7 +398,7 @@ public class PassivePowers : BaseUnityPlugin
 			return str;
 		}
 
-		private static readonly MethodInfo ActivationStatusUpdater = AccessTools.DeclaredMethod(typeof(Patch_ItemStand_GetHoverText), nameof(UpdateActivationStatus));
+		private static readonly MethodInfo ActivationStatusUpdater = AccessTools.DeclaredMethod(typeof(ModifyBossStoneHoverText), nameof(UpdateActivationStatus));
 		private const string activateStr = "$guardianstone_hook_activate";
 
 		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -405,7 +416,7 @@ public class PassivePowers : BaseUnityPlugin
 	}
 
 	[HarmonyPatch(typeof(ItemStand), nameof(ItemStand.Interact))]
-	private class Patch_ItemStand_Interact
+	private class SwitchSelectedPowers
 	{
 		private static string UpdateActivationStatus(string str, ItemStand itemStand)
 		{
@@ -416,11 +427,25 @@ public class PassivePowers : BaseUnityPlugin
 			return str;
 		}
 
-		private static readonly MethodInfo ActivationStatusUpdater = AccessTools.DeclaredMethod(typeof(Patch_ItemStand_Interact), nameof(UpdateActivationStatus));
+		private static bool CanActivatePower(ItemStand itemStand)
+		{
+			if (Utils.PassivePowerEnabled(itemStand.m_guardianPower.name))
+			{
+				return true;
+			}
+
+			Player.m_localPlayer.Message(MessageHud.MessageType.Center, Localization.instance.Localize("$powers_min_kills_passive", requiredBossKillsPassive[itemStand.m_guardianPower.name].Value.ToString()));
+			return false;
+		}
+
+		private static readonly MethodInfo ActivationStatusUpdater = AccessTools.DeclaredMethod(typeof(SwitchSelectedPowers), nameof(UpdateActivationStatus));
+		private static readonly MethodInfo ActivatePowerCheck = AccessTools.DeclaredMethod(typeof(SwitchSelectedPowers), nameof(CanActivatePower));
 		private const string activateStr = "$guardianstone_hook_power_activate";
 
-		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator ilg)
 		{
+			Label cleanup = ilg.DefineLabel();
+
 			foreach (CodeInstruction instruction in instructions)
 			{
 				yield return instruction;
@@ -428,13 +453,22 @@ public class PassivePowers : BaseUnityPlugin
 				{
 					yield return new CodeInstruction(OpCodes.Ldarg_0);
 					yield return new CodeInstruction(OpCodes.Call, ActivationStatusUpdater);
+					yield return new CodeInstruction(OpCodes.Ldarg_0);
+					yield return new CodeInstruction(OpCodes.Call, ActivatePowerCheck);
+					yield return new CodeInstruction(OpCodes.Brfalse, cleanup);
 				}
 			}
+
+			yield return new CodeInstruction(OpCodes.Pop) { labels = new List<Label> { cleanup } };
+			yield return new CodeInstruction(OpCodes.Pop);
+			yield return new CodeInstruction(OpCodes.Pop);
+			yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+			yield return new CodeInstruction(OpCodes.Ret);
 		}
 	}
 
 	[HarmonyPatch(typeof(TextsDialog), nameof(TextsDialog.AddActiveEffects))]
-	private class Patch_TextsDialog_AddActiveEffects
+	private class AddPowerEffectsToCompendium
 	{
 		private static void DisplayGuardianPowers(StringBuilder stringBuilder)
 		{
@@ -459,7 +493,7 @@ public class PassivePowers : BaseUnityPlugin
 		}
 
 		private static readonly MethodInfo GuardianPowerGetter = AccessTools.DeclaredMethod(typeof(Player), nameof(Player.GetGuardianPowerHUD));
-		private static readonly MethodInfo GuardianPowerWriter = AccessTools.DeclaredMethod(typeof(Patch_TextsDialog_AddActiveEffects), nameof(DisplayGuardianPowers));
+		private static readonly MethodInfo GuardianPowerWriter = AccessTools.DeclaredMethod(typeof(AddPowerEffectsToCompendium), nameof(DisplayGuardianPowers));
 
 		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
@@ -505,7 +539,7 @@ public class PassivePowers : BaseUnityPlugin
 	private static readonly List<HudPower> hudPowers = new();
 
 	[HarmonyPatch(typeof(Hud), nameof(Hud.Awake))]
-	private class Patch_Hud_Awake
+	private class DisplayMultiplePowers
 	{
 		private static void Postfix(Hud __instance)
 		{
@@ -550,7 +584,7 @@ public class PassivePowers : BaseUnityPlugin
 	}
 
 	[HarmonyPatch(typeof(Hud), nameof(Hud.UpdateGuardianPower))]
-	private class Patch_Hud_UpdateGuardianPower
+	private class DisplayBossPowerCooldown
 	{
 		private static bool Prefix(Hud __instance)
 		{
@@ -573,8 +607,35 @@ public class PassivePowers : BaseUnityPlugin
 				hudPowers[index].root.gameObject.SetActive(false);
 			}
 
-			__instance.m_gpCooldown.text = activeBossPowers.GetToggle() ? remainingCooldown > 0f ? StatusEffect.GetTimeString(remainingCooldown) : Localization.instance.Localize("$hud_ready") : Localization.instance.Localize("$powers_type_passive");
+			__instance.m_gpCooldown.text = Utils.ActivePowersEnabled() ? remainingCooldown > 0f ? StatusEffect.GetTimeString(remainingCooldown) : Localization.instance.Localize("$hud_ready") : Localization.instance.Localize("$powers_type_passive");
 			return false;
+		}
+	}
+
+	[HarmonyPatch(typeof(PlayerProfile), nameof(PlayerProfile.SavePlayerData))]
+	private static class SaveBossKills
+	{
+		private static void Prefix(PlayerProfile __instance, Player player)
+		{
+			foreach (KeyValuePair<string, float> stat in __instance.m_enemyStats)
+			{
+				player.m_customData[stat.Key] = stat.Value.ToString(CultureInfo.InvariantCulture);
+			}
+		}
+	}
+
+	[HarmonyPatch(typeof(PlayerProfile), nameof(PlayerProfile.LoadPlayerData))]
+	private static class LoadBossKills
+	{
+		private static void Postfix(PlayerProfile __instance, Player player)
+		{
+			foreach (GameObject gameObject in ZNetScene.instance.m_prefabs)
+			{
+				if (gameObject.GetComponent<Character>() is { } character && player.m_customData.TryGetValue(character.m_name, out string valueStr) && float.TryParse(valueStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float value) && !__instance.m_enemyStats.ContainsKey(character.m_name))
+				{
+					__instance.m_enemyStats[character.m_name] = value;
+				}
+			}
 		}
 	}
 }

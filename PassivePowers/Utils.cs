@@ -4,6 +4,7 @@ using System.Linq;
 using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
+using UnityEngine;
 
 namespace PassivePowers;
 
@@ -26,7 +27,36 @@ public static class Utils
 		return timeSpan.TotalMinutes >= 1 ? timeSpan.Seconds == 0 ? minutesText : Localization.instance.Localize("$powers_time_bind", minutesText, secondsText) : secondsText;
 	}
 
-	public static bool CanApplyPower(Player player, string power) => getPassivePowers(player).Contains(power) || player.GetSEMan().HaveStatusEffect("PassivePowers " + power);
+	public static bool CanApplyPower(Player player, string power) => getPassivePowers(player).Contains(power) || player.GetSEMan().HaveStatusEffect(("PassivePowers " + power).GetStableHashCode());
+	
+	public static bool ActivePowersEnabled() => PassivePowers.requiredBossKillsActive.Any(v => v.Value.Value >= 0);
+
+	private static readonly Dictionary<string, string> effectToBossMap = new()
+	{
+		{ Power.Eikthyr, "$enemy_eikthyr" },
+		{ Power.TheElder, "$enemy_gdking" },
+		{ Power.Bonemass, "$enemy_bonemass" },
+		{ Power.Moder, "$enemy_dragon" },
+		{ Power.Yagluth, "$enemy_goblinking" },
+		{ Power.Queen, "$enemy_seekerqueen" },
+		{ Power.Fader, "$enemy_fader" },
+	};
+	
+	private static bool PowerEnabled(Dictionary<string, ConfigEntry<int>> required, string powerName)
+	{
+		int value = required[powerName].Value;
+		Game.instance.GetPlayerProfile().m_enemyStats.TryGetValue(effectToBossMap[powerName], out float kills);
+		return value >= 0 && value <= kills;
+	}
+
+	public static bool ActivePowerEnabled(string powerName) => PowerEnabled(PassivePowers.requiredBossKillsActive, powerName);
+	public static bool PassivePowerEnabled(string powerName) => PowerEnabled(PassivePowers.requiredBossKillsPassive, powerName);
+
+	// since KeyboardShortcut.IsPressed and KeyboardShortcut.IsDown behave unintuitively
+	public static bool IsKeyDown(this KeyboardShortcut shortcut)
+	{
+		return shortcut.MainKey != KeyCode.None && Input.GetKeyDown(shortcut.MainKey) && shortcut.Modifiers.All(Input.GetKey);
+	}
 }
 
 public static class Power
@@ -37,10 +67,11 @@ public static class Power
 	public const string Moder = "GP_Moder";
 	public const string Yagluth = "GP_Yagluth";
 	public const string Queen = "GP_Queen";
+	public const string Fader = "GP_Fader";
 }
 
 [HarmonyPatch(typeof(Player), nameof(Player.SetGuardianPower))]
-public class Patch_Player_SetGuardianPower
+public class SetSelectedGuardianPowers
 {
 	private static bool Prefix(Player __instance, string name)
 	{
@@ -68,13 +99,4 @@ public class Patch_Player_SetGuardianPower
 
 		return false;
 	}
-}
-
-public class PowerConfig<T>
-{
-	public string powerName = null!;
-	public ConfigEntry<T> active = null!;
-	public ConfigEntry<T> passive = null!;
-
-	public T Value => (Player.m_localPlayer?.m_seman.HaveStatusEffect("PassivePowers Depletion " + powerName) != false ? default : Player.m_localPlayer.m_seman.HaveStatusEffect("PassivePowers " + powerName) ? active.Value : passive.Value)!;
 }
