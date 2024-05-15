@@ -629,11 +629,14 @@ public class PassivePowers : BaseUnityPlugin
 	{
 		private static void Postfix(PlayerProfile __instance, Player player)
 		{
-			foreach (GameObject gameObject in ZNetScene.instance.m_prefabs)
+			if (ZNetScene.instance)
 			{
-				if (gameObject.GetComponent<Character>() is { } character && player.m_customData.TryGetValue(character.m_name, out string valueStr) && float.TryParse(valueStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float value) && !__instance.m_enemyStats.ContainsKey(character.m_name))
+				foreach (GameObject gameObject in ZNetScene.instance.m_prefabs)
 				{
-					__instance.m_enemyStats[character.m_name] = value;
+					if (gameObject.GetComponent<Character>() is { } character && player.m_customData.TryGetValue(character.m_name, out string valueStr) && float.TryParse(valueStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float value) && !__instance.m_enemyStats.ContainsKey(character.m_name))
+					{
+						__instance.m_enemyStats[character.m_name] = value;
+					}
 				}
 			}
 		}
