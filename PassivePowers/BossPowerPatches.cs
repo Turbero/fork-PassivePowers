@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
@@ -133,7 +134,7 @@ public static class BossPowerPatches
 
 	private static float ShipValue(Ship ship, Type type)
 	{
-		float active = (float)type.GetMethod("Total")!.Invoke(null, Array.Empty<object>()) / 100;
+		float active = ((IConvertible)type.GetMethod("Total", BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy)!.Invoke(null, Array.Empty<object>())).ToSingle(CultureInfo.InvariantCulture) / 100;
 		if (active > 0)
 		{
 			return active;
@@ -147,7 +148,7 @@ public static class BossPowerPatches
 				if (cfg.GetType() == type)
 				{
 					List<Player> playersWithPower = ship.m_players.FindAll(p => Utils.getPassivePowers(p.m_nview.GetZDO()?.GetString("PassivePowers GuardianPowers") ?? "").Contains(kv.Key));
-					passive += (float)cfg.BoxedPassive * playersWithPower.Count / Mathf.Max(1, ship.m_players.Count);
+					passive += ((IConvertible)cfg.BoxedPassive).ToSingle(CultureInfo.InvariantCulture) * playersWithPower.Count / Mathf.Max(1, ship.m_players.Count);
 				}
 			}
 		}
