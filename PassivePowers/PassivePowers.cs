@@ -21,7 +21,7 @@ namespace PassivePowers;
 public class PassivePowers : BaseUnityPlugin
 {
 	private const string ModName = "Passive Powers";
-	private const string ModVersion = "1.1.1";
+	private const string ModVersion = "1.1.2";
 	private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
 	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
@@ -132,6 +132,7 @@ public class PassivePowers : BaseUnityPlugin
 		private static void Postfix(Player __instance)
 		{
 			__instance.m_nview.Register<string>("PassivePowers Activate BossPower", ActivateBossPowerRPC);
+			__instance.m_nview.Register<string>("PassivePowers BossDied", BossDied);
 		}
 	}
 
@@ -640,5 +641,31 @@ public class PassivePowers : BaseUnityPlugin
 				}
 			}
 		}
+	}
+	
+	[HarmonyPatch(typeof(Character), nameof(Character.OnDeath))]
+	public static class CountBossKills
+	{
+		private static void Prefix(Character __instance)
+		{
+			if (__instance.IsBoss() && Utils.effectToBossMap.ContainsValue(__instance.m_name))
+			{
+				List<Player> nearbyPlayers = new();
+				Player.GetPlayersInRange(__instance.transform.position, 50f, nearbyPlayers);
+
+				foreach (Player p in nearbyPlayers)
+				{
+					if (p != Player.m_localPlayer)
+					{
+						p.m_nview.InvokeRPC("PassivePowers BossDied", __instance.m_name);
+					}
+				}
+			}
+		}
+	}
+
+	private static void BossDied(long sender, string bossName)
+	{
+		Game.instance.GetPlayerProfile().m_enemyStats.IncrementOrSet(bossName);
 	}
 }

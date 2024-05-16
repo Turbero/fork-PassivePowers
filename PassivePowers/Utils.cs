@@ -31,7 +31,7 @@ public static class Utils
 	
 	public static bool ActivePowersEnabled() => PassivePowers.requiredBossKillsActive.Any(v => v.Value.Value >= 0);
 
-	private static readonly Dictionary<string, string> effectToBossMap = new()
+	public static readonly Dictionary<string, string> effectToBossMap = new()
 	{
 		{ Power.Eikthyr, "$enemy_eikthyr" },
 		{ Power.TheElder, "$enemy_gdking" },
