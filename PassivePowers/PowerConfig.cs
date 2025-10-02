@@ -59,6 +59,13 @@ public class SwimSpeed(int active, int passive): PowerConfig<int, SwimSpeed>(act
 	public override string Desc => "$powers_swim_speed_increase";
 	public override string Unit => "% increase";
 }
+[UsedImplicitly]
+public class SwimStaminaUsage(int active, int passive): PowerConfig<int, SwimStaminaUsage>(active, passive)
+{
+	public override string Modifier => "Swim Stamina Usage";
+	public override string Desc => "$powers_swim_stamina_usage";
+	public override string Unit => "% decrease";
+}
 
 [UsedImplicitly]
 public class RunStamina(int active, int passive): PowerConfig<int, RunStamina>(active, passive)

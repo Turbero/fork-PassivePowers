@@ -74,6 +74,15 @@ public static class BossPowerPatches
 			}
 		}
 	}
+	
+	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.ModifySwimStaminaUsage))]
+	private class ModifySwimStaminaUsage
+	{
+		private static void Prefix(SE_Stats __instance, float baseStaminaUse, ref float staminaUse)
+		{
+			__instance.m_swimStaminaUseModifier = SwimStaminaUsage.Total() / 100f;
+		}
+	}
 
 	[HarmonyPatch(typeof(SEMan), nameof(SEMan.ModifyAttack))]
 	private class IncreaseTerrainDamage
