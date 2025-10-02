@@ -98,11 +98,11 @@ public class PassivePowers : BaseUnityPlugin
 
 		bossConfig(Power.Eikthyr, 3, "Eikthyr", "RunStamina:15:60,JumpStamina:15:60,SwimSpeed:15:60");
 		bossConfig(Power.TheElder, 4, "The Elder", "HealthRegen:10:30,TreeDamage:20:60,MiningDamage:20:60");
-		bossConfig(Power.Bonemass, 5, "Bonemass", "PhysicalDamage:10:85"); //TODO gasto vigor al bloquear -100%, block stamina return +5
+		bossConfig(Power.Bonemass, 5, "Bonemass", "PhysicalDamage:10:85,BlockStaminaUsage:20:100,BlockStaminaReturn:1:5");
 		bossConfig(Power.Moder, 6, "Moder", "TailWind:20:100,WindModifier:35:200,CarryWeight:30:300,MovementSpeed:5:10");
-		bossConfig(Power.Yagluth, 7, "Yagluth", "BonusLightningDefense:10:85,BonusFireDamage:5:10,BonusFrostDamage:5:10,BonusLightningDamage:5:10,BonusPoisonDamage:5:10,BonusSpiritDamage:5:10,TreeDamage:5:10,MiningDamage:5:10"); //TODO cultivo +25
+		bossConfig(Power.Yagluth, 7, "Yagluth", "BonusLightningDefense:10:85,BonusFireDamage:5:10,BonusFrostDamage:5:10,BonusLightningDamage:5:10,BonusPoisonDamage:5:10,BonusSpiritDamage:5:10,TreeDamage:5:10,MiningDamage:5:10"); //TODO Farming +25
 		bossConfig(Power.Queen, 8, "Queen", "EitrRegen:25:100,BonusPoisonDefense:10:30,StaminaCrouchRegen:50:100");
-		bossConfig(Power.Fader, 9, "Fader", "BonusPoisonDefense:10:30"); //TODO resistencia tambaleo (stagger) +50%, uso de adrenalina +100% (da el doble por golpe)
+		bossConfig(Power.Fader, 9, "Fader", "BonusPoisonDefense:10:30,AdrenalineBonus:25:100,StaggerResist:20:50");
 
 		for (int i = 0; i < bossPowerCount; ++i)
 		{

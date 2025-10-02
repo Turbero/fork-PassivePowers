@@ -209,6 +209,34 @@ public class StaminaCrouchRegen(int active, int passive): PowerConfig<int, Stami
 	public override string Desc => "$powers_stamina_crouch_regen_reduction";
 	public override string Unit => "% bonus";
 }
+[UsedImplicitly]
+public class AdrenalineBonus(int active, int passive): PowerConfig<int, AdrenalineBonus>(active, passive)
+{
+	public override string Modifier => "Adrenaline Bonus";
+	public override string Desc => "$powers_adrenaline_bonus";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class StaggerResist(int active, int passive): PowerConfig<int, StaggerResist>(active, passive)
+{
+	public override string Modifier => "Stagger Resist";
+	public override string Desc => "$powers_stagger_resist";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BlockStaminaUsage(int active, int passive): PowerConfig<int, BlockStaminaUsage>(active, passive)
+{
+	public override string Modifier => "Block Stamina Usage";
+	public override string Desc => "$powers_block_stamina_usage";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BlockStaminaReturn(int active, int passive): PowerConfig<int, BlockStaminaReturn>(active, passive)
+{
+	public override string Modifier => "Block Stamina Return";
+	public override string Desc => "$powers_block_stamina_return";
+	public override string Unit => "+ bonus";
+}
 
 [UsedImplicitly]
 public class EitrRegen(int active, int passive): PowerConfig<int, EitrRegen>(active, passive)

@@ -237,4 +237,44 @@ public static class BossPowerPatches
 			__result *= 1 + CarryWeight.Total() / 100f;
 		}
 	}
+
+	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.ModifyAdrenaline))]
+	private static class ModifyAdrenaline
+	{
+		[UsedImplicitly]
+		public static void Prefix(SE_Stats __instance, float baseValue, ref float use)
+		{
+			__instance.m_adrenalineModifier = 1 + AdrenalineBonus.Total() / 100f;
+		}
+	}
+
+	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.ModifyStagger))]
+	private static class ModifyStagger
+	{
+		[UsedImplicitly]
+		public static void Prefix(SE_Stats __instance, float baseValue, ref float use)
+		{
+			__instance.m_staggerModifier = 1 + StaggerResist.Total() / 100f;
+		}
+	}
+	
+	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.ModifyBlockStaminaUsage))]
+	private static class ModifyBlockStaminaUsage
+	{
+		[UsedImplicitly]
+		public static void Prefix(SE_Stats __instance, float baseStaminaUse, ref float staminaUse)
+		{
+			__instance.m_blockStaminaUseModifier = 1 + BlockStaminaUsage.Total() * -1 / 100f;
+		}
+	}
+	
+	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.ModifyBlockStaminaUsage))]
+	private static class ModifyBlockStaminaUsageReturn
+	{
+		[UsedImplicitly]
+		public static void Prefix(SE_Stats __instance, float baseStaminaUse, ref float staminaUse)
+		{
+			__instance.m_blockStaminaUseFlatValue = BlockStaminaReturn.Total() * -1;
+		}
+	}
 }
