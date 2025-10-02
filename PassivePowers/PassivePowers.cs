@@ -21,7 +21,7 @@ namespace PassivePowers;
 public class PassivePowers : BaseUnityPlugin
 {
 	private const string ModName = "Passive Powers";
-	private const string ModVersion = "1.1.2";
+	private const string ModVersion = "1.1.3";
 	private const string ModGUID = "org.bepinex.plugins.passivepowers";
 
 	private static readonly ConfigSync configSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
@@ -96,13 +96,13 @@ public class PassivePowers : BaseUnityPlugin
 		activeBossPowerDepletion = config("2 - Active Powers", "Power loss duration after boss power activation (seconds)", 180, new ConfigDescription("Disables the passive effect of the boss power for the specified duration after the active effect ends.", null, activeBossPowerSettingAttributes));
 		activeBossPowerDepletion.SettingChanged += activeBossPowerSettingChanged;
 
-		bossConfig(Power.Eikthyr, 3, "Eikthyr", "MovementSpeed:0:25,RunStamina:15:40,JumpStamina:15:40");
-		bossConfig(Power.TheElder, 4, "The Elder", "TreeDamage:20:200,MiningDamage:20:200");
-		bossConfig(Power.Bonemass, 5, "Bonemass", "PhysicalDamage:10:85,HealthRegen:10:200");
-		bossConfig(Power.Moder, 6, "Moder", "TailWind:20:100,WindModifier:35:200");
-		bossConfig(Power.Yagluth, 7, "Yagluth", "ElementalDamage:10:85,BonusFireDamage:10:100");
-		bossConfig(Power.Queen, 8, "Queen", "EitrRegen:25:300,SwimSpeed:20:40");
-		bossConfig(Power.Fader, 9, "Fader", "CarryWeight:25:300,MovementSpeed:10:35");
+		bossConfig(Power.Eikthyr, 3, "Eikthyr", "RunStamina:15:60,JumpStamina:15:60,SwimSpeed:15:60");
+		bossConfig(Power.TheElder, 4, "The Elder", "HealthRegen:10:30,TreeDamage:20:60,MiningDamage:20:60");
+		bossConfig(Power.Bonemass, 5, "Bonemass", "PhysicalDamage:10:85"); //TODO gasto vigor al bloquear -100%, block stamina return +5
+		bossConfig(Power.Moder, 6, "Moder", "TailWind:20:100,WindModifier:35:200,CarryWeight:30:300,MovementSpeed:5:10");
+		bossConfig(Power.Yagluth, 7, "Yagluth", "BonusLightningDefense:10:85,BonusFireDamage:5:10,BonusFrostDamage:5:10,BonusLightningDamage:5:10,BonusPoisonDamage:5:10,BonusSpiritDamage:5:10,TreeDamage:5:10,MiningDamage:5:10"); //TODO cultivo +25
+		bossConfig(Power.Queen, 8, "Queen", "EitrRegen:25:100,BonusPoisonDefense:10:30,StaminaCrouchRegen:50:100");
+		bossConfig(Power.Fader, 9, "Fader", "BonusPoisonDefense:10:30"); //TODO resistencia tambaleo (stagger) +50%, uso de adrenalina +100% (da el doble por golpe)
 
 		for (int i = 0; i < bossPowerCount; ++i)
 		{

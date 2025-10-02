@@ -106,15 +106,32 @@ public static class BossPowerPatches
 			}
 		}
 	}
+	
+	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.ModifySneakStaminaUsage))]
+	private class SEManModifyStaminaRegen
+	{
+		private static void Prefix(SE_Stats __instance, float baseStaminaUse, ref float staminaUse)
+		{
+			if (__instance.m_character.IsCrouching())
+				// Stamina stops being used when crouching at m_sneakStaminaUseModifier = -0.5
+				__instance.m_sneakStaminaUseModifier = 1 - StaminaCrouchRegen.Total() * 1.5f / 100f;
+			else
+				__instance.m_sneakStaminaUseModifier = 1;
+		}
+	}
 
 	[HarmonyPatch(typeof(Character), nameof(Character.Damage))]
-	private class AddFireDamage
+	private class AddElementalDamages
 	{
 		private static void Prefix(HitData hit)
 		{
 			if (hit.GetAttacker() is Player)
 			{
-				hit.m_damage.m_fire += hit.GetTotalDamage() * BonusFireDamage.Total() / 100f;
+				hit.m_damage.m_fire += hit.GetTotalDamage() * (BonusFireDamage.Total() - BonusFireDefense.Total() / 100f);
+				hit.m_damage.m_frost *= hit.GetTotalDamage() * (BonusFrostDamage.Total() - BonusFrostDefense.Total() / 100f);
+				hit.m_damage.m_poison *= hit.GetTotalDamage() * (BonusPoisonDamage.Total() - BonusPoisonDefense.Total() / 100f);
+				hit.m_damage.m_lightning *= hit.GetTotalDamage() * (BonusLightningDamage.Total() - BonusLightningDefense.Total() / 100f);
+				hit.m_damage.m_spirit *= hit.GetTotalDamage() * (BonusSpiritDamage.Total() - BonusSpiritDefense.Total() / 100f);
 			}
 		}
 	}

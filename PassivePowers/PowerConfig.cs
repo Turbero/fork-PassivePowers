@@ -139,6 +139,76 @@ public class BonusFireDamage(int active, int passive): PowerConfig<int, BonusFir
 	public override string Desc => "$powers_additional_fire_damage";
 	public override string Unit => "% bonus";
 }
+[UsedImplicitly]
+public class BonusFrostDamage(int active, int passive): PowerConfig<int, BonusFrostDamage>(active, passive)
+{
+	public override string Modifier => "Bonus Frost Damage";
+	public override string Desc => "$powers_additional_frost_damage";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BonusLightningDamage(int active, int passive): PowerConfig<int, BonusLightningDamage>(active, passive)
+{
+	public override string Modifier => "Bonus Lightning Damage";
+	public override string Desc => "$powers_additional_lightning_damage";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BonusPoisonDamage(int active, int passive): PowerConfig<int, BonusPoisonDamage>(active, passive)
+{
+	public override string Modifier => "Bonus Poison Damage";
+	public override string Desc => "$powers_additional_poison_damage";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BonusSpiritDamage(int active, int passive): PowerConfig<int, BonusSpiritDamage>(active, passive)
+{
+	public override string Modifier => "Bonus Spirit Damage";
+	public override string Desc => "$powers_additional_spirit_damage";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BonusFireDefense(int active, int passive): PowerConfig<int, BonusFireDefense>(active, passive)
+{
+	public override string Modifier => "Bonus Fire Defense";
+	public override string Desc => "$powers_additional_fire_defense";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BonusFrostDefense(int active, int passive): PowerConfig<int, BonusFrostDefense>(active, passive)
+{
+	public override string Modifier => "Bonus Frost Defense";
+	public override string Desc => "$powers_additional_frost_defense";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BonusLightningDefense(int active, int passive): PowerConfig<int, BonusLightningDefense>(active, passive)
+{
+	public override string Modifier => "Bonus Lightning Defense";
+	public override string Desc => "$powers_additional_lightning_defense";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BonusPoisonDefense(int active, int passive): PowerConfig<int, BonusPoisonDefense>(active, passive)
+{
+	public override string Modifier => "Bonus Poison Defense";
+	public override string Desc => "$powers_additional_poison_defense";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BonusSpiritDefense(int active, int passive): PowerConfig<int, BonusSpiritDefense>(active, passive)
+{
+	public override string Modifier => "Bonus Spirit Defense";
+	public override string Desc => "$powers_additional_spirit_damage";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class StaminaCrouchRegen(int active, int passive): PowerConfig<int, StaminaCrouchRegen>(active, passive)
+{
+	public override string Modifier => "Stamina Crouch Regen";
+	public override string Desc => "$powers_stamina_crouch_regen_reduction";
+	public override string Unit => "% bonus";
+}
 
 [UsedImplicitly]
 public class EitrRegen(int active, int passive): PowerConfig<int, EitrRegen>(active, passive)
