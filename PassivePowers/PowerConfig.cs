@@ -213,7 +213,7 @@ public class BonusSpiritDefense(int active, int passive): PowerConfig<int, Bonus
 public class StaminaCrouchRegen(int active, int passive): PowerConfig<int, StaminaCrouchRegen>(active, passive)
 {
 	public override string Modifier => "Stamina Crouch Regen";
-	public override string Desc => "$powers_stamina_crouch_regen_reduction";
+	public override string Desc => "$powers_sneak_stamina_reduction";
 	public override string Unit => "% bonus";
 }
 [UsedImplicitly]
@@ -258,7 +258,7 @@ public class CarryWeight(int active, int passive): PowerConfig<int, CarryWeight>
 {
 	public override string Modifier => "Carry Weight Increase";
 	public override string Desc => "$powers_carry_weight";
-	public override string Unit => "% increase";
+	public override string Unit => "+ increase";
 }
 
 public class BossConfig(HashSet<PowerConfig> configs)
