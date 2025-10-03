@@ -121,26 +121,37 @@ public static class BossPowerPatches
 	{
 		private static void Prefix(SE_Stats __instance, float baseStaminaUse, ref float staminaUse)
 		{
+			// Stamina stops being used when sneaking at m_sneakStaminaUseModifier = -0.5
 			if (__instance.m_character.IsCrouching())
-				// Stamina stops being used when crouching at m_sneakStaminaUseModifier = -0.5
 				__instance.m_sneakStaminaUseModifier = 1 - StaminaCrouchRegen.Total() * 1.5f / 100f;
-			else
-				__instance.m_sneakStaminaUseModifier = 1;
 		}
 	}
 
 	[HarmonyPatch(typeof(Character), nameof(Character.Damage))]
-	private class AddElementalDamages
+	private class AddElementalDamagesAndDefenses
 	{
-		private static void Prefix(HitData hit)
+		private static void Prefix(HitData hit, Character __instance)
 		{
 			if (hit.GetAttacker() is Player)
 			{
-				hit.m_damage.m_fire += hit.GetTotalDamage() * (BonusFireDamage.Total() - BonusFireDefense.Total() / 100f);
-				hit.m_damage.m_frost *= hit.GetTotalDamage() * (BonusFrostDamage.Total() - BonusFrostDefense.Total() / 100f);
-				hit.m_damage.m_poison *= hit.GetTotalDamage() * (BonusPoisonDamage.Total() - BonusPoisonDefense.Total() / 100f);
-				hit.m_damage.m_lightning *= hit.GetTotalDamage() * (BonusLightningDamage.Total() - BonusLightningDefense.Total() / 100f);
-				hit.m_damage.m_spirit *= hit.GetTotalDamage() * (BonusSpiritDamage.Total() - BonusSpiritDefense.Total() / 100f);
+				if (hit.m_damage.m_fire > 0)
+					hit.m_damage.m_fire += hit.m_damage.m_fire * BonusFireDamage.Total() / 100f;
+				if (hit.m_damage.m_frost > 0)
+					hit.m_damage.m_frost += hit.m_damage.m_frost * BonusFrostDamage.Total() / 100f;
+				if (hit.m_damage.m_poison > 0)
+					hit.m_damage.m_poison += hit.m_damage.m_poison * BonusPoisonDamage.Total() / 100f;
+				if (hit.m_damage.m_lightning > 0)
+					hit.m_damage.m_lightning += hit.m_damage.m_lightning * BonusLightningDamage.Total() / 100f;
+				if (hit.m_damage.m_spirit > 0)
+					hit.m_damage.m_spirit += hit.m_damage.m_spirit * BonusSpiritDamage.Total() / 100f;
+			}
+			if (__instance.IsPlayer())
+			{
+				hit.m_damage.m_fire -= hit.m_damage.m_fire * BonusFireDefense.Total() / 100f;
+				hit.m_damage.m_frost -= hit.m_damage.m_frost * BonusFrostDefense.Total() / 100f;
+				hit.m_damage.m_poison -= hit.m_damage.m_poison * BonusPoisonDefense.Total() / 100f;
+				hit.m_damage.m_lightning -= hit.m_damage.m_lightning * BonusLightningDefense.Total() / 100f;
+				hit.m_damage.m_spirit -= hit.m_damage.m_spirit * BonusSpiritDefense.Total() / 100f;
 			}
 		}
 	}
