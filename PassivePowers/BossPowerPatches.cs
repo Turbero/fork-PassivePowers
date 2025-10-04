@@ -144,6 +144,12 @@ public static class BossPowerPatches
 					hit.m_damage.m_lightning += hit.m_damage.m_lightning * BonusLightningDamage.Total() / 100f;
 				if (hit.m_damage.m_spirit > 0)
 					hit.m_damage.m_spirit += hit.m_damage.m_spirit * BonusSpiritDamage.Total() / 100f;
+				if (hit.m_damage.m_blunt > 0)
+					hit.m_damage.m_blunt += hit.m_damage.m_blunt * BonusBluntDamage.Total() / 100f;
+				if (hit.m_damage.m_pierce > 0)
+					hit.m_damage.m_pierce += hit.m_damage.m_pierce * BonusPierceDamage.Total() / 100f;
+				if (hit.m_damage.m_slash > 0)
+					hit.m_damage.m_slash += hit.m_damage.m_slash * BonusSlashDamage.Total() / 100f;
 			}
 			if (__instance.IsPlayer())
 			{
