@@ -100,7 +100,7 @@ public class PassivePowers : BaseUnityPlugin
 		bossConfig(Power.TheElder, 4, "The Elder", "HealthRegen:10:30,TreeDamage:20:60,MiningDamage:20:60");
 		bossConfig(Power.Bonemass, 5, "Bonemass", "PhysicalDamage:10:85,BlockStaminaUsage:20:100,BlockStaminaReturn:1:5");
 		bossConfig(Power.Moder, 6, "Moder", "BonusFrostDefense:10:30,TailWind:20:100,WindModifier:35:200,CarryWeight:30:300,MovementSpeed:5:10");
-		bossConfig(Power.Yagluth, 7, "Yagluth", "BonusLightningDefense:10:85,BonusFireDamage:5:10,BonusFrostDamage:5:10,BonusLightningDamage:5:10,BonusPoisonDamage:5:10,BonusSpiritDamage:5:10,TreeDamage:5:10,MiningDamage:5:10"); //TODO Farming +25
+		bossConfig(Power.Yagluth, 7, "Yagluth", "BonusLightningDefense:10:85,BonusFireDamage:5:10,BonusFrostDamage:5:10,BonusLightningDamage:5:10,BonusPoisonDamage:5:10,BonusSpiritDamage:5:10,BonusBluntDamage:5:10,BonusPierceDamage:5:10,BonusSlashDamage:5:10,TreeDamage:5:10,MiningDamage:5:10"); //TODO Farming +25
 		bossConfig(Power.Queen, 8, "Queen", "EitrRegen:25:100,BonusPoisonDefense:10:30,StaminaCrouchRegen:50:100");
 		bossConfig(Power.Fader, 9, "Fader", "BonusFireDefense:10:30,AdrenalineBonus:25:100,StaggerResist:20:50");
 
