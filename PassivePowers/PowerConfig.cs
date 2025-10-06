@@ -140,6 +140,14 @@ public class ElementalDamage(int active, int passive): PowerConfig<int, Elementa
 }
 
 [UsedImplicitly]
+public class BonusDamage(int active, int passive) : PowerConfig<int, BonusDamage>(active, passive)
+{
+    public override string Modifier => "Bonus Damage";
+    public override string Desc => "$powers_additional_damage";
+    public override string Unit => "% bonus";
+}
+
+[UsedImplicitly]
 public class BonusFireDamage(int active, int passive): PowerConfig<int, BonusFireDamage>(active, passive)
 {
 	public override string Modifier => "Bonus Fire Damage";
@@ -172,6 +180,27 @@ public class BonusSpiritDamage(int active, int passive): PowerConfig<int, BonusS
 {
 	public override string Modifier => "Bonus Spirit Damage";
 	public override string Desc => "$powers_additional_spirit_damage";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BonusBluntDamage(int active, int passive): PowerConfig<int, BonusBluntDamage>(active, passive)
+{
+	public override string Modifier => "Bonus Blunt Damage";
+	public override string Desc => "$powers_additional_blunt_damage";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BonusPierceDamage(int active, int passive): PowerConfig<int, BonusPierceDamage>(active, passive)
+{
+	public override string Modifier => "Bonus Pierce Damage";
+	public override string Desc => "$powers_additional_pierce_damage";
+	public override string Unit => "% bonus";
+}
+[UsedImplicitly]
+public class BonusSlashDamage(int active, int passive): PowerConfig<int, BonusSlashDamage>(active, passive)
+{
+	public override string Modifier => "Bonus Slash Damage";
+	public override string Desc => "$powers_additional_slash_damage";
 	public override string Unit => "% bonus";
 }
 [UsedImplicitly]
