@@ -97,7 +97,7 @@ public static class BossPowerPatches
 		}
 	}
 
-	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
+	/*[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
 	private class DecreaseDamageTaken
 	{
 		private static void Prefix(Character __instance, HitData hit)
@@ -114,7 +114,7 @@ public static class BossPowerPatches
 				hit.m_damage.m_lightning *= 1 - ElementalDamage.Total() / 100f;
 			}
 		}
-	}
+	}*/
 	
 	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.ModifySneakStaminaUsage))]
 	private class SEManModifyStaminaRegen
@@ -128,37 +128,32 @@ public static class BossPowerPatches
 	}
 
 	[HarmonyPatch(typeof(Character), nameof(Character.Damage))]
-	private class AddElementalDamagesAndDefenses
+	private class ModifyDamageDoneOrTaken
 	{
 		private static void Prefix(HitData hit, Character __instance)
 		{
 			if (hit.GetAttacker() is Player)
 			{
-				if (hit.m_damage.m_fire > 0)
-					hit.m_damage.m_fire += hit.m_damage.m_fire * BonusFireDamage.Total() / 100f;
-				if (hit.m_damage.m_frost > 0)
-					hit.m_damage.m_frost += hit.m_damage.m_frost * BonusFrostDamage.Total() / 100f;
-				if (hit.m_damage.m_poison > 0)
-					hit.m_damage.m_poison += hit.m_damage.m_poison * BonusPoisonDamage.Total() / 100f;
-				if (hit.m_damage.m_lightning > 0)
-					hit.m_damage.m_lightning += hit.m_damage.m_lightning * BonusLightningDamage.Total() / 100f;
-				if (hit.m_damage.m_spirit > 0)
-					hit.m_damage.m_spirit += hit.m_damage.m_spirit * BonusSpiritDamage.Total() / 100f;
-				if (hit.m_damage.m_blunt > 0)
-					hit.m_damage.m_blunt += hit.m_damage.m_blunt * BonusBluntDamage.Total() / 100f;
-				if (hit.m_damage.m_pierce > 0)
-					hit.m_damage.m_pierce += hit.m_damage.m_pierce * BonusPierceDamage.Total() / 100f;
-				if (hit.m_damage.m_slash > 0)
-					hit.m_damage.m_slash += hit.m_damage.m_slash * BonusSlashDamage.Total() / 100f;
+				float totalBaseDamage = hit.GetTotalDamage();
+                hit.m_damage.m_fire = (hit.m_damage.m_fire + totalBaseDamage * BonusFireDamage.Total() / 100f) * (1 + BonusDamage.Total() / 100f);
+                hit.m_damage.m_frost = (hit.m_damage.m_frost + totalBaseDamage * BonusFrostDamage.Total() / 100f) * (1 + BonusDamage.Total() / 100f);
+                hit.m_damage.m_poison = (hit.m_damage.m_poison + totalBaseDamage * BonusPoisonDamage.Total() / 100f) * (1 + BonusDamage.Total() / 100f);
+                hit.m_damage.m_lightning = (hit.m_damage.m_lightning + totalBaseDamage * BonusLightningDamage.Total() / 100f) * (1 + BonusDamage.Total() / 100f);
+                hit.m_damage.m_spirit = (hit.m_damage.m_spirit + totalBaseDamage * BonusSpiritDamage.Total() / 100f) * (1 + BonusDamage.Total() / 100f);
+                hit.m_damage.m_blunt = (hit.m_damage.m_blunt + totalBaseDamage * BonusBluntDamage.Total() / 100f) * (1 + BonusDamage.Total() / 100f);
+                hit.m_damage.m_pierce = (hit.m_damage.m_pierce + totalBaseDamage * BonusPierceDamage.Total() / 100f) * (1 + BonusDamage.Total() / 100f);
+                hit.m_damage.m_slash = (hit.m_damage.m_slash + totalBaseDamage * BonusSlashDamage.Total() / 100f) * (1 + BonusDamage.Total() / 100f);
 			}
 			if (__instance.IsPlayer())
 			{
-				hit.m_damage.m_fire -= hit.m_damage.m_fire * BonusFireDefense.Total() / 100f;
-				hit.m_damage.m_frost -= hit.m_damage.m_frost * BonusFrostDefense.Total() / 100f;
-				hit.m_damage.m_poison -= hit.m_damage.m_poison * BonusPoisonDefense.Total() / 100f;
-				hit.m_damage.m_lightning -= hit.m_damage.m_lightning * BonusLightningDefense.Total() / 100f;
-				hit.m_damage.m_spirit -= hit.m_damage.m_spirit * BonusSpiritDefense.Total() / 100f;
-			}
+				hit.m_damage.m_fire *= 1 - BonusFireDefense.Total() / 100f;
+				hit.m_damage.m_frost *= 1 - BonusFrostDefense.Total() / 100f;
+				hit.m_damage.m_poison *= 1 - BonusPoisonDefense.Total() / 100f;
+				hit.m_damage.m_lightning *= 1 - BonusLightningDefense.Total() / 100f;
+                hit.m_damage.m_blunt *= 1 - PhysicalDamage.Total() / 100f;
+                hit.m_damage.m_pierce *= 1 - PhysicalDamage.Total() / 100f;
+                hit.m_damage.m_slash *= 1 - PhysicalDamage.Total() / 100f;
+            }
 		}
 	}
 
@@ -264,43 +259,33 @@ public static class BossPowerPatches
 		}
 	}
 
-	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.ModifyAdrenaline))]
+	[HarmonyPatch(typeof(SEMan), nameof(SEMan.ModifyAdrenaline))]
 	private static class ModifyAdrenaline
 	{
 		[UsedImplicitly]
-		public static void Prefix(SE_Stats __instance, float baseValue, ref float use)
+		public static void Prefix(float baseValue, ref float use)
 		{
-			__instance.m_adrenalineModifier = 1 + AdrenalineBonus.Total() / 100f;
+			use *= 1 + AdrenalineBonus.Total() / 100f;
 		}
 	}
 
-	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.ModifyStagger))]
+	[HarmonyPatch(typeof(SEMan), nameof(SEMan.ModifyStagger))]
 	private static class ModifyStagger
 	{
 		[UsedImplicitly]
-		public static void Prefix(SE_Stats __instance, float baseValue, ref float use)
+		public static void Prefix(float baseValue, ref float use)
 		{
-			__instance.m_staggerModifier = 1 + StaggerResist.Total() / 100f;
+			use = 1 + StaggerResist.Total() * -1 / 100f;
 		}
 	}
 	
-	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.ModifyBlockStaminaUsage))]
+	[HarmonyPatch(typeof(SEMan), nameof(SEMan.ModifyBlockStaminaUsage))]
 	private static class ModifyBlockStaminaUsage
 	{
 		[UsedImplicitly]
-		public static void Prefix(SE_Stats __instance, float baseStaminaUse, ref float staminaUse)
+		public static void Prefix(float baseStaminaUse, ref float staminaUse)
 		{
-			__instance.m_blockStaminaUseModifier = 1 + BlockStaminaUsage.Total() * -1 / 100f;
-		}
-	}
-	
-	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.ModifyBlockStaminaUsage))]
-	private static class ModifyBlockStaminaUsageReturn
-	{
-		[UsedImplicitly]
-		public static void Prefix(SE_Stats __instance, float baseStaminaUse, ref float staminaUse)
-		{
-			__instance.m_blockStaminaUseFlatValue = BlockStaminaReturn.Total() * -1;
+			staminaUse = staminaUse * (1 + BlockStaminaUsage.Total() * -1 / 100f) + BlockStaminaReturn.Total() * -1;
 		}
 	}
 }

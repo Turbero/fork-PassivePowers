@@ -140,6 +140,14 @@ public class ElementalDamage(int active, int passive): PowerConfig<int, Elementa
 }
 
 [UsedImplicitly]
+public class BonusDamage(int active, int passive) : PowerConfig<int, BonusDamage>(active, passive)
+{
+    public override string Modifier => "Bonus Damage";
+    public override string Desc => "$powers_additional_damage";
+    public override string Unit => "% bonus";
+}
+
+[UsedImplicitly]
 public class BonusFireDamage(int active, int passive): PowerConfig<int, BonusFireDamage>(active, passive)
 {
 	public override string Modifier => "Bonus Fire Damage";
