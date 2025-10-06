@@ -4,8 +4,3 @@ obj
 PassivePowers.sln.DotSettings.user
 .idea
 .vs
-PassivePowers/Libs/assembly_guiutils.dll
-PassivePowers/Libs/0Harmony.dll
-PassivePowers/Libs/assembly_utils.dll
-PassivePowers/Libs/assembly_valheim.dll
-PassivePowers/Libs/BepInEx.dll
