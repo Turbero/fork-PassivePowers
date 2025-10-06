@@ -96,25 +96,6 @@ public static class BossPowerPatches
 			}
 		}
 	}
-
-	/*[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
-	private class DecreaseDamageTaken
-	{
-		private static void Prefix(Character __instance, HitData hit)
-		{
-			if (__instance is Player)
-			{
-				hit.m_damage.m_blunt *= 1 - PhysicalDamage.Total() / 100f;
-				hit.m_damage.m_pierce *= 1 - PhysicalDamage.Total() / 100f;
-				hit.m_damage.m_slash *= 1 - PhysicalDamage.Total() / 100f;
-
-				hit.m_damage.m_fire *= 1 - ElementalDamage.Total() / 100f;
-				hit.m_damage.m_frost *= 1 - ElementalDamage.Total() / 100f;
-				hit.m_damage.m_poison *= 1 - ElementalDamage.Total() / 100f;
-				hit.m_damage.m_lightning *= 1 - ElementalDamage.Total() / 100f;
-			}
-		}
-	}*/
 	
 	[HarmonyPatch(typeof(SE_Stats), nameof(SE_Stats.ModifySneakStaminaUsage))]
 	private class SEManModifyStaminaRegen
@@ -288,4 +269,5 @@ public static class BossPowerPatches
 			staminaUse = staminaUse * (1 + BlockStaminaUsage.Total() * -1 / 100f) + BlockStaminaReturn.Total() * -1;
 		}
 	}
+
 }
