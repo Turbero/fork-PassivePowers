@@ -142,6 +142,6 @@
     </Target>
     -->
   <Target Name="Copy" AfterTargets="ILRepack">
-    <Exec Command="copy /Y &quot;$(TargetDir)$(AssemblyName).dll&quot; &quot;C:\Users\tilit\AppData\Roaming\Thunderstore Mod Manager\DataFolder\Valheim\profiles\Default\BepInEx\plugins\Smoothbrain-PassivePowers\(AssemblyName).dll&quot;" />
+    <Exec Command="copy /Y &quot;$(TargetDir)$(AssemblyName).dll&quot; &quot;$(GamePath)\BepInEx\plugins\$(AssemblyName).dll&quot;" />
   </Target>
 </Project>
